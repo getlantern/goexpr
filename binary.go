@@ -21,16 +21,14 @@ func Binary(operator string, left Expr, right Expr) (Expr, error) {
 	// operators, use that.
 	var o op
 	switch operator {
-	case "==", "<", "LIKE", "+", "-", "*", "/", "OR", "AND":
+	case "==", "<", ">", "LIKE", "+", "-", "*", "/", "OR", "AND":
 		o = ops[operator]
 	case "!=":
 		o = not(ops["=="])
 	case "<=":
 		o = or(ops["<"], ops["=="])
 	case ">=":
-		o = not(ops["<"])
-	case ">":
-		o = not(or(ops["<"], ops["=="]))
+		o = or(ops[">"], ops["=="])
 	case "NOT LIKE":
 		o = not(ops["LIKE"])
 	default:
@@ -78,33 +76,103 @@ var eq = func(a interface{}, b interface{}) interface{} {
 	}
 	switch v := a.(type) {
 	case bool:
-		return v == b.(bool)
+		switch v2 := b.(type) {
+		case bool:
+			return v == v2
+		default:
+			return false
+		}
 	case byte:
-		return v == b.(byte)
+		switch v2 := b.(type) {
+		case byte:
+			return v == v2
+		default:
+			return false
+		}
 	case uint16:
-		return v == b.(uint16)
+		switch v2 := b.(type) {
+		case uint16:
+			return v == v2
+		default:
+			return false
+		}
 	case uint32:
-		return v == b.(uint32)
+		switch v2 := b.(type) {
+		case uint32:
+			return v == v2
+		default:
+			return false
+		}
 	case uint64:
-		return v == b.(uint64)
+		switch v2 := b.(type) {
+		case uint64:
+			return v == v2
+		default:
+			return false
+		}
 	case int8:
-		return v == b.(int8)
+		switch v2 := b.(type) {
+		case int8:
+			return v == v2
+		default:
+			return false
+		}
 	case int16:
-		return v == b.(int16)
+		switch v2 := b.(type) {
+		case int16:
+			return v == v2
+		default:
+			return false
+		}
 	case int32:
-		return v == b.(int32)
+		switch v2 := b.(type) {
+		case int32:
+			return v == v2
+		default:
+			return false
+		}
 	case int64:
-		return v == b.(int64)
+		switch v2 := b.(type) {
+		case int64:
+			return v == v2
+		default:
+			return false
+		}
 	case int:
-		return v == b.(int)
+		switch v2 := b.(type) {
+		case int:
+			return v == v2
+		default:
+			return false
+		}
 	case float32:
-		return v == b.(float32)
+		switch v2 := b.(type) {
+		case float32:
+			return v == v2
+		default:
+			return false
+		}
 	case float64:
-		return v == b.(float64)
+		switch v2 := b.(type) {
+		case float64:
+			return v == v2
+		default:
+			return false
+		}
 	case string:
-		return v == b.(string)
+		switch v2 := b.(type) {
+		case string:
+			return v == v2
+		default:
+			return false
+		}
 	case time.Time:
-		return v == b.(time.Time)
+		switch v2 := b.(type) {
+		case time.Time:
+			return v == v2
+		default:
+			return false
+		}
 	default:
 		return false
 	}
@@ -121,33 +189,213 @@ var ops = map[string]op{
 		}
 		switch v := a.(type) {
 		case bool:
-			return !v && b.(bool)
+			switch v2 := b.(type) {
+			case bool:
+				return !v && v2
+			default:
+				return false
+			}
 		case byte:
-			return v < b.(byte)
+			switch v2 := b.(type) {
+			case byte:
+				return v < v2
+			default:
+				return false
+			}
 		case uint16:
-			return v < b.(uint16)
+			switch v2 := b.(type) {
+			case uint16:
+				return v < v2
+			default:
+				return false
+			}
 		case uint32:
-			return v < b.(uint32)
+			switch v2 := b.(type) {
+			case uint32:
+				return v < v2
+			default:
+				return false
+			}
 		case uint64:
-			return v < b.(uint64)
+			switch v2 := b.(type) {
+			case uint64:
+				return v < v2
+			default:
+				return false
+			}
 		case int8:
-			return v < b.(int8)
+			switch v2 := b.(type) {
+			case int8:
+				return v < v2
+			default:
+				return false
+			}
 		case int16:
-			return v < b.(int16)
+			switch v2 := b.(type) {
+			case int16:
+				return v < v2
+			default:
+				return false
+			}
 		case int32:
-			return v < b.(int32)
+			switch v2 := b.(type) {
+			case int32:
+				return v < v2
+			default:
+				return false
+			}
 		case int64:
-			return v < b.(int64)
+			switch v2 := b.(type) {
+			case int64:
+				return v < v2
+			default:
+				return false
+			}
 		case int:
-			return v < b.(int)
+			switch v2 := b.(type) {
+			case int:
+				return v < v2
+			default:
+				return false
+			}
 		case float32:
-			return v < b.(float32)
+			switch v2 := b.(type) {
+			case float32:
+				return v < v2
+			default:
+				return false
+			}
 		case float64:
-			return v < b.(float64)
+			switch v2 := b.(type) {
+			case float64:
+				return v < v2
+			default:
+				return false
+			}
 		case string:
-			return v < b.(string)
+			switch v2 := b.(type) {
+			case string:
+				return v < v2
+			default:
+				return false
+			}
 		case time.Time:
-			return v.Before(b.(time.Time))
+			switch v2 := b.(type) {
+			case time.Time:
+				return v.Before(v2)
+			default:
+				return false
+			}
+		default:
+			return false
+		}
+	},
+	">": func(a interface{}, b interface{}) interface{} {
+		if a == nil {
+			return false
+		}
+		if b == nil {
+			return true
+		}
+		switch v := a.(type) {
+		case bool:
+			switch v2 := b.(type) {
+			case bool:
+				return v && !v2
+			default:
+				return false
+			}
+		case byte:
+			switch v2 := b.(type) {
+			case byte:
+				return v > v2
+			default:
+				return false
+			}
+		case uint16:
+			switch v2 := b.(type) {
+			case uint16:
+				return v > v2
+			default:
+				return false
+			}
+		case uint32:
+			switch v2 := b.(type) {
+			case uint32:
+				return v > v2
+			default:
+				return false
+			}
+		case uint64:
+			switch v2 := b.(type) {
+			case uint64:
+				return v > v2
+			default:
+				return false
+			}
+		case int8:
+			switch v2 := b.(type) {
+			case int8:
+				return v > v2
+			default:
+				return false
+			}
+		case int16:
+			switch v2 := b.(type) {
+			case int16:
+				return v > v2
+			default:
+				return false
+			}
+		case int32:
+			switch v2 := b.(type) {
+			case int32:
+				return v > v2
+			default:
+				return false
+			}
+		case int64:
+			switch v2 := b.(type) {
+			case int64:
+				return v > v2
+			default:
+				return false
+			}
+		case int:
+			switch v2 := b.(type) {
+			case int:
+				return v > v2
+			default:
+				return false
+			}
+		case float32:
+			switch v2 := b.(type) {
+			case float32:
+				return v > v2
+			default:
+				return false
+			}
+		case float64:
+			switch v2 := b.(type) {
+			case float64:
+				return v > v2
+			default:
+				return false
+			}
+		case string:
+			switch v2 := b.(type) {
+			case string:
+				return v > v2
+			default:
+				return false
+			}
+		case time.Time:
+			switch v2 := b.(type) {
+			case time.Time:
+				return v.After(v2)
+			default:
+				return false
+			}
 		default:
 			return false
 		}
@@ -161,7 +409,12 @@ var ops = map[string]op{
 		}
 		switch v := a.(type) {
 		case string:
-			return strings.Contains(v, b.(string))
+			switch v2 := b.(type) {
+			case string:
+				return strings.Contains(v, v2)
+			default:
+				return strings.Contains(v, fmt.Sprint(b))
+			}
 		default:
 			return eq(a, b)
 		}
@@ -172,25 +425,75 @@ var ops = map[string]op{
 		}
 		switch v := a.(type) {
 		case uint16:
-			return v + b.(uint16)
+			switch v2 := b.(type) {
+			case uint16:
+				return v + v2
+			default:
+				return 0
+			}
 		case uint32:
-			return v + b.(uint32)
+			switch v2 := b.(type) {
+			case uint32:
+				return v + v2
+			default:
+				return 0
+			}
 		case uint64:
-			return v + b.(uint64)
+			switch v2 := b.(type) {
+			case uint64:
+				return v + v2
+			default:
+				return 0
+			}
 		case int8:
-			return v + b.(int8)
+			switch v2 := b.(type) {
+			case int8:
+				return v + v2
+			default:
+				return 0
+			}
 		case int16:
-			return v + b.(int16)
+			switch v2 := b.(type) {
+			case int16:
+				return v + v2
+			default:
+				return 0
+			}
 		case int32:
-			return v + b.(int32)
+			switch v2 := b.(type) {
+			case int32:
+				return v + v2
+			default:
+				return 0
+			}
 		case int64:
-			return v + b.(int64)
+			switch v2 := b.(type) {
+			case int64:
+				return v + v2
+			default:
+				return 0
+			}
 		case int:
-			return v + b.(int)
+			switch v2 := b.(type) {
+			case int:
+				return v + v2
+			default:
+				return 0
+			}
 		case float32:
-			return v + b.(float32)
+			switch v2 := b.(type) {
+			case float32:
+				return v + v2
+			default:
+				return 0
+			}
 		case float64:
-			return v + b.(float64)
+			switch v2 := b.(type) {
+			case float64:
+				return v + v2
+			default:
+				return 0
+			}
 		default:
 			return 0
 		}
@@ -201,25 +504,75 @@ var ops = map[string]op{
 		}
 		switch v := a.(type) {
 		case uint16:
-			return v - b.(uint16)
+			switch v2 := b.(type) {
+			case uint16:
+				return v - v2
+			default:
+				return 0
+			}
 		case uint32:
-			return v - b.(uint32)
+			switch v2 := b.(type) {
+			case uint32:
+				return v - v2
+			default:
+				return 0
+			}
 		case uint64:
-			return v - b.(uint64)
+			switch v2 := b.(type) {
+			case uint64:
+				return v - v2
+			default:
+				return 0
+			}
 		case int8:
-			return v - b.(int8)
+			switch v2 := b.(type) {
+			case int8:
+				return v - v2
+			default:
+				return 0
+			}
 		case int16:
-			return v - b.(int16)
+			switch v2 := b.(type) {
+			case int16:
+				return v - v2
+			default:
+				return 0
+			}
 		case int32:
-			return v - b.(int32)
+			switch v2 := b.(type) {
+			case int32:
+				return v - v2
+			default:
+				return 0
+			}
 		case int64:
-			return v - b.(int64)
+			switch v2 := b.(type) {
+			case int64:
+				return v - v2
+			default:
+				return 0
+			}
 		case int:
-			return v - b.(int)
+			switch v2 := b.(type) {
+			case int:
+				return v - v2
+			default:
+				return 0
+			}
 		case float32:
-			return v - b.(float32)
+			switch v2 := b.(type) {
+			case float32:
+				return v - v2
+			default:
+				return 0
+			}
 		case float64:
-			return v - b.(float64)
+			switch v2 := b.(type) {
+			case float64:
+				return v - v2
+			default:
+				return 0
+			}
 		default:
 			return 0
 		}
@@ -230,25 +583,75 @@ var ops = map[string]op{
 		}
 		switch v := a.(type) {
 		case uint16:
-			return v * b.(uint16)
+			switch v2 := b.(type) {
+			case uint16:
+				return v * v2
+			default:
+				return 0
+			}
 		case uint32:
-			return v * b.(uint32)
+			switch v2 := b.(type) {
+			case uint32:
+				return v * v2
+			default:
+				return 0
+			}
 		case uint64:
-			return v * b.(uint64)
+			switch v2 := b.(type) {
+			case uint64:
+				return v * v2
+			default:
+				return 0
+			}
 		case int8:
-			return v * b.(int8)
+			switch v2 := b.(type) {
+			case int8:
+				return v * v2
+			default:
+				return 0
+			}
 		case int16:
-			return v * b.(int16)
+			switch v2 := b.(type) {
+			case int16:
+				return v * v2
+			default:
+				return 0
+			}
 		case int32:
-			return v * b.(int32)
+			switch v2 := b.(type) {
+			case int32:
+				return v * v2
+			default:
+				return 0
+			}
 		case int64:
-			return v * b.(int64)
+			switch v2 := b.(type) {
+			case int64:
+				return v * v2
+			default:
+				return 0
+			}
 		case int:
-			return v * b.(int)
+			switch v2 := b.(type) {
+			case int:
+				return v * v2
+			default:
+				return 0
+			}
 		case float32:
-			return v * b.(float32)
+			switch v2 := b.(type) {
+			case float32:
+				return v * v2
+			default:
+				return 0
+			}
 		case float64:
-			return v * b.(float64)
+			switch v2 := b.(type) {
+			case float64:
+				return v * v2
+			default:
+				return 0
+			}
 		default:
 			return 0
 		}
@@ -259,65 +662,105 @@ var ops = map[string]op{
 		}
 		switch v := a.(type) {
 		case uint16:
-			w := b.(uint16)
-			if b == 0 {
+			switch v2 := b.(type) {
+			case uint16:
+				if v2 == 0 {
+					return 0
+				}
+				return v / v2
+			default:
 				return 0
 			}
-			return v / w
 		case uint32:
-			w := b.(uint32)
-			if b == 0 {
+			switch v2 := b.(type) {
+			case uint32:
+				if v2 == 0 {
+					return 0
+				}
+				return v / v2
+			default:
 				return 0
 			}
-			return v / w
 		case uint64:
-			w := b.(uint64)
-			if b == 0 {
+			switch v2 := b.(type) {
+			case uint64:
+				if v2 == 0 {
+					return 0
+				}
+				return v / v2
+			default:
 				return 0
 			}
-			return v / w
 		case int8:
-			w := b.(int8)
-			if b == 0 {
+			switch v2 := b.(type) {
+			case int8:
+				if v2 == 0 {
+					return 0
+				}
+				return v / v2
+			default:
 				return 0
 			}
-			return v / w
 		case int16:
-			w := b.(int16)
-			if b == 0 {
+			switch v2 := b.(type) {
+			case int16:
+				if v2 == 0 {
+					return 0
+				}
+				return v / v2
+			default:
 				return 0
 			}
-			return v / w
 		case int32:
-			w := b.(int32)
-			if b == 0 {
+			switch v2 := b.(type) {
+			case int32:
+				if v2 == 0 {
+					return 0
+				}
+				return v / v2
+			default:
 				return 0
 			}
-			return v / w
 		case int64:
-			w := b.(int64)
-			if b == 0 {
+			switch v2 := b.(type) {
+			case int64:
+				if v2 == 0 {
+					return 0
+				}
+				return v / v2
+			default:
 				return 0
 			}
-			return v / w
 		case int:
-			w := b.(int)
-			if b == 0 {
+			switch v2 := b.(type) {
+			case int:
+				if v2 == 0 {
+					return 0
+				}
+				return v / v2
+			default:
 				return 0
 			}
-			return v / w
 		case float32:
-			w := b.(float32)
-			if b == 0 {
+			switch v2 := b.(type) {
+			case float32:
+				if v2 == 0 {
+					return 0
+				}
+				return v / v2
+			default:
 				return 0
 			}
-			return v / w
 		case float64:
-			w := b.(float64)
-			if b == 0 {
+			switch v2 := b.(type) {
+			case float64:
+				if v2 == 0 {
+					return 0
+				}
+				return v / v2
+			default:
 				return 0
 			}
-			return v / w
 		default:
 			return 0
 		}

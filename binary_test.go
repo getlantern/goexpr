@@ -13,7 +13,7 @@ func TestBinaryComparisons(t *testing.T) {
 	now := time.Now()
 	vals := [][]interface{}{
 		[]interface{}{nil, 1},
-		[]interface{}{"false", "true"},
+		[]interface{}{false, true},
 		[]interface{}{1, 2},
 		[]interface{}{"x", "y"},
 		[]interface{}{now, now.Add(5 * time.Second)},
@@ -23,30 +23,39 @@ func TestBinaryComparisons(t *testing.T) {
 		scenarios = append(scenarios, scenario{"=", vals[0], vals[0], true})
 		scenarios = append(scenarios, scenario{"=", vals[0], vals[1], false})
 		scenarios = append(scenarios, scenario{"=", vals[1], vals[0], false})
+		scenarios = append(scenarios, scenario{"=", vals[1], float64(64325425), false})
 		scenarios = append(scenarios, scenario{"==", vals[0], vals[0], true})
 		scenarios = append(scenarios, scenario{"==", vals[0], vals[1], false})
 		scenarios = append(scenarios, scenario{"==", vals[1], vals[0], false})
+		scenarios = append(scenarios, scenario{"==", vals[1], float64(64325425), false})
 		scenarios = append(scenarios, scenario{"LIKE", vals[0], vals[0], true})
 		scenarios = append(scenarios, scenario{"LIKE", vals[0], vals[1], false})
 		scenarios = append(scenarios, scenario{"LIKE", vals[1], vals[0], false})
+		scenarios = append(scenarios, scenario{"LIKE", vals[1], float64(64325425), false})
 		scenarios = append(scenarios, scenario{"<>", vals[0], vals[0], false})
 		scenarios = append(scenarios, scenario{"<>", vals[0], vals[1], true})
 		scenarios = append(scenarios, scenario{"<>", vals[1], vals[0], true})
+		scenarios = append(scenarios, scenario{"<>", vals[1], float64(64325425), true})
 		scenarios = append(scenarios, scenario{"!=", vals[0], vals[0], false})
 		scenarios = append(scenarios, scenario{"!=", vals[0], vals[1], true})
 		scenarios = append(scenarios, scenario{"!=", vals[1], vals[0], true})
+		scenarios = append(scenarios, scenario{"!=", vals[1], float64(64325425), true})
 		scenarios = append(scenarios, scenario{"<=", vals[0], vals[0], true})
 		scenarios = append(scenarios, scenario{"<=", vals[0], vals[1], true})
 		scenarios = append(scenarios, scenario{"<=", vals[1], vals[0], false})
+		scenarios = append(scenarios, scenario{"<=", vals[1], float64(64325425), false})
 		scenarios = append(scenarios, scenario{">=", vals[0], vals[0], true})
 		scenarios = append(scenarios, scenario{">=", vals[0], vals[1], false})
 		scenarios = append(scenarios, scenario{">=", vals[1], vals[0], true})
+		scenarios = append(scenarios, scenario{">=", vals[1], float64(64325425), false})
 		scenarios = append(scenarios, scenario{"<", vals[0], vals[0], false})
 		scenarios = append(scenarios, scenario{"<", vals[0], vals[1], true})
 		scenarios = append(scenarios, scenario{"<", vals[1], vals[0], false})
+		scenarios = append(scenarios, scenario{"<", vals[1], float64(64325425), false})
 		scenarios = append(scenarios, scenario{">", vals[0], vals[0], false})
 		scenarios = append(scenarios, scenario{">", vals[0], vals[1], false})
 		scenarios = append(scenarios, scenario{">", vals[1], vals[0], true})
+		scenarios = append(scenarios, scenario{">", vals[1], float64(64325425), false})
 	}
 
 	for _, scenario := range scenarios {
@@ -111,16 +120,20 @@ func TestBinaryCalculations(t *testing.T) {
 		scenario{"+", 4, 2, 6},
 		scenario{"+", nil, 2, 0},
 		scenario{"+", 4, nil, 0},
+		scenario{"+", 4, "string", 0},
 		scenario{"-", 4, 2, 2},
 		scenario{"-", nil, 2, 0},
 		scenario{"-", 4, nil, 0},
+		scenario{"-", 4, "string", 0},
 		scenario{"*", 4, 2, 8},
 		scenario{"*", nil, 2, 0},
 		scenario{"*", 4, nil, 0},
+		scenario{"*", 4, "string", 0},
 		scenario{"/", 4, 2, 2},
 		scenario{"/", nil, 2, 0},
 		scenario{"/", 4, nil, 0},
 		scenario{"/", 4, 0, 0},
+		scenario{"/", 4, "string", 0},
 	}
 
 	for _, scenario := range scenarios {
