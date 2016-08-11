@@ -11,52 +11,149 @@ type scenario [4]interface{}
 
 func TestBinaryComparisons(t *testing.T) {
 	now := time.Now()
-	vals := [][]interface{}{
-		[]interface{}{nil, 1},
-		[]interface{}{false, true},
-		[]interface{}{1, 2},
-		[]interface{}{"x", "y"},
-		[]interface{}{now, now.Add(5 * time.Second)},
+	scenarios := []scenario{
+		scenario{"=", nil, nil, true},
+		scenario{"=", nil, false, true},
+		scenario{"=", nil, true, false},
+		scenario{"=", nil, 0, true},
+		scenario{"=", nil, 1, false},
+		scenario{"=", nil, 0.0, true},
+		scenario{"=", nil, 0.1, false},
+		scenario{"=", nil, "", true},
+		scenario{"=", nil, "something", false},
+		scenario{"=", nil, time.Time{}, true},
+		scenario{"=", nil, now, false},
+		scenario{"=", false, nil, true},
+		scenario{"=", false, false, true},
+		scenario{"=", false, true, false},
+		scenario{"=", false, 0, true},
+		scenario{"=", false, 1, false},
+		scenario{"=", false, 0.0, true},
+		scenario{"=", false, 0.1, false},
+		scenario{"=", false, "", true},
+		scenario{"=", false, "something", false},
+		scenario{"=", false, time.Time{}, true},
+		scenario{"=", false, now, false},
+		scenario{"=", 0, nil, true},
+		scenario{"=", 0, false, true},
+		scenario{"=", 0, true, false},
+		scenario{"=", 0, 0, true},
+		scenario{"=", 0, 1, false},
+		scenario{"=", 0, 0.0, true},
+		scenario{"=", 0, 0.1, false},
+		scenario{"=", 0, "0", true},
+		scenario{"=", 0, "0.0", true},
+		scenario{"=", 0, time.Time{}, false},
+		scenario{"=", 0, now, false},
+		scenario{"=", now.String(), now, true},
+
+		scenario{"!=", nil, nil, false},
+		scenario{"!=", nil, false, false},
+		scenario{"!=", nil, true, true},
+		scenario{"!=", nil, 0, false},
+		scenario{"!=", nil, 1, true},
+		scenario{"!=", nil, 0.0, false},
+		scenario{"!=", nil, 0.1, true},
+		scenario{"!=", nil, "", false},
+		scenario{"!=", nil, "something", true},
+		scenario{"!=", nil, time.Time{}, false},
+		scenario{"!=", nil, now, true},
+		scenario{"!=", false, nil, false},
+		scenario{"!=", false, false, false},
+		scenario{"!=", false, true, true},
+		scenario{"!=", false, 0, false},
+		scenario{"!=", false, 1, true},
+		scenario{"!=", false, 0.0, false},
+		scenario{"!=", false, 0.1, true},
+		scenario{"!=", false, "", false},
+		scenario{"!=", false, "something", true},
+		scenario{"!=", false, time.Time{}, false},
+		scenario{"!=", false, now, true},
+		scenario{"!=", 0, nil, false},
+		scenario{"!=", 0, false, false},
+		scenario{"!=", 0, true, true},
+		scenario{"!=", 0, 0, false},
+		scenario{"!=", 0, 1, true},
+		scenario{"!=", 0, 0.0, false},
+		scenario{"!=", 0, 0.1, true},
+		scenario{"!=", 0, "0", false},
+		scenario{"!=", 0, "0.0", false},
+		scenario{"!=", 0, time.Time{}, true},
+		scenario{"!=", 0, now, true},
+		scenario{"!=", now.String(), now, false},
+
+		scenario{"<", nil, nil, false},
+		scenario{"<", nil, false, false},
+		scenario{"<", nil, true, true},
+		scenario{"<", nil, 0, false},
+		scenario{"<", nil, 1, true},
+		scenario{"<", nil, 0.0, false},
+		scenario{"<", nil, 0.1, true},
+		scenario{"<", nil, "", false},
+		scenario{"<", nil, "something", true},
+		scenario{"<", nil, time.Time{}, false},
+		scenario{"<", nil, now, true},
+		scenario{"<", false, nil, true},
+		scenario{"<", false, false, true},
+		scenario{"<", false, true, false},
+		scenario{"<", false, 0, true},
+		scenario{"<", false, 1, false},
+		scenario{"<", false, 0.0, true},
+		scenario{"<", false, 0.1, false},
+		scenario{"<", false, "", true},
+		scenario{"<", false, "something", false},
+		scenario{"<", false, time.Time{}, true},
+		scenario{"<", false, now, false},
+		scenario{"<", 0, nil, true},
+		scenario{"<", 0, false, true},
+		scenario{"<", 0, true, false},
+		scenario{"<", 0, 0, true},
+		scenario{"<", 0, 1, false},
+		scenario{"<", 0, 0.0, true},
+		scenario{"<", 0, 0.1, false},
+		scenario{"<", 0, "0", true},
+		scenario{"<", 0, "0.0", true},
+		scenario{"<", 0, time.Time{}, false},
+		scenario{"<", 0, now, false},
+		scenario{"<", now.String(), now, true},
 	}
-	var scenarios []scenario
-	for _, vals := range vals {
-		scenarios = append(scenarios, scenario{"=", vals[0], vals[0], true})
-		scenarios = append(scenarios, scenario{"=", vals[0], vals[1], false})
-		scenarios = append(scenarios, scenario{"=", vals[1], vals[0], false})
-		scenarios = append(scenarios, scenario{"=", vals[1], float64(64325425), false})
-		scenarios = append(scenarios, scenario{"==", vals[0], vals[0], true})
-		scenarios = append(scenarios, scenario{"==", vals[0], vals[1], false})
-		scenarios = append(scenarios, scenario{"==", vals[1], vals[0], false})
-		scenarios = append(scenarios, scenario{"==", vals[1], float64(64325425), false})
-		scenarios = append(scenarios, scenario{"LIKE", vals[0], vals[0], true})
-		scenarios = append(scenarios, scenario{"LIKE", vals[0], vals[1], false})
-		scenarios = append(scenarios, scenario{"LIKE", vals[1], vals[0], false})
-		scenarios = append(scenarios, scenario{"LIKE", vals[1], float64(64325425), false})
-		scenarios = append(scenarios, scenario{"<>", vals[0], vals[0], false})
-		scenarios = append(scenarios, scenario{"<>", vals[0], vals[1], true})
-		scenarios = append(scenarios, scenario{"<>", vals[1], vals[0], true})
-		scenarios = append(scenarios, scenario{"<>", vals[1], float64(64325425), true})
-		scenarios = append(scenarios, scenario{"!=", vals[0], vals[0], false})
-		scenarios = append(scenarios, scenario{"!=", vals[0], vals[1], true})
-		scenarios = append(scenarios, scenario{"!=", vals[1], vals[0], true})
-		scenarios = append(scenarios, scenario{"!=", vals[1], float64(64325425), true})
-		scenarios = append(scenarios, scenario{"<=", vals[0], vals[0], true})
-		scenarios = append(scenarios, scenario{"<=", vals[0], vals[1], true})
-		scenarios = append(scenarios, scenario{"<=", vals[1], vals[0], false})
-		scenarios = append(scenarios, scenario{"<=", vals[1], float64(64325425), false})
-		scenarios = append(scenarios, scenario{">=", vals[0], vals[0], true})
-		scenarios = append(scenarios, scenario{">=", vals[0], vals[1], false})
-		scenarios = append(scenarios, scenario{">=", vals[1], vals[0], true})
-		scenarios = append(scenarios, scenario{">=", vals[1], float64(64325425), false})
-		scenarios = append(scenarios, scenario{"<", vals[0], vals[0], false})
-		scenarios = append(scenarios, scenario{"<", vals[0], vals[1], true})
-		scenarios = append(scenarios, scenario{"<", vals[1], vals[0], false})
-		scenarios = append(scenarios, scenario{"<", vals[1], float64(64325425), false})
-		scenarios = append(scenarios, scenario{">", vals[0], vals[0], false})
-		scenarios = append(scenarios, scenario{">", vals[0], vals[1], false})
-		scenarios = append(scenarios, scenario{">", vals[1], vals[0], true})
-		scenarios = append(scenarios, scenario{">", vals[1], float64(64325425), false})
-	}
+	// vals := [][]interface{}{
+	// 	[]interface{}{nil, 1},
+	// 	[]interface{}{false, true},
+	// 	[]interface{}{1, 2},
+	// 	[]interface{}{"x", "y"},
+	// 	[]interface{}{now, now.Add(5 * time.Second)},
+	// }
+	// var scenarios []scenario
+	// for _, vals := range vals {
+	// 	scenarios = append(scenarios, scenario{"=", vals[0], vals[0], true})
+	// 	scenarios = append(scenarios, scenario{"=", vals[0], vals[1], false})
+	// 	scenarios = append(scenarios, scenario{"=", vals[1], vals[0], false})
+	// 	scenarios = append(scenarios, scenario{"==", vals[0], vals[0], true})
+	// 	scenarios = append(scenarios, scenario{"==", vals[0], vals[1], false})
+	// 	scenarios = append(scenarios, scenario{"==", vals[1], vals[0], false})
+	// 	scenarios = append(scenarios, scenario{"LIKE", vals[0], vals[0], true})
+	// 	scenarios = append(scenarios, scenario{"LIKE", vals[0], vals[1], false})
+	// 	scenarios = append(scenarios, scenario{"LIKE", vals[1], vals[0], false})
+	// 	scenarios = append(scenarios, scenario{"<>", vals[0], vals[0], false})
+	// 	scenarios = append(scenarios, scenario{"<>", vals[0], vals[1], true})
+	// 	scenarios = append(scenarios, scenario{"<>", vals[1], vals[0], true})
+	// 	scenarios = append(scenarios, scenario{"!=", vals[0], vals[0], false})
+	// 	scenarios = append(scenarios, scenario{"!=", vals[0], vals[1], true})
+	// 	scenarios = append(scenarios, scenario{"!=", vals[1], vals[0], true})
+	// 	scenarios = append(scenarios, scenario{"<=", vals[0], vals[0], true})
+	// 	scenarios = append(scenarios, scenario{"<=", vals[0], vals[1], true})
+	// 	scenarios = append(scenarios, scenario{"<=", vals[1], vals[0], false})
+	// 	scenarios = append(scenarios, scenario{">=", vals[0], vals[0], true})
+	// 	scenarios = append(scenarios, scenario{">=", vals[0], vals[1], false})
+	// 	scenarios = append(scenarios, scenario{">=", vals[1], vals[0], true})
+	// 	scenarios = append(scenarios, scenario{"<", vals[0], vals[0], false})
+	// 	scenarios = append(scenarios, scenario{"<", vals[0], vals[1], true})
+	// 	scenarios = append(scenarios, scenario{"<", vals[1], vals[0], false})
+	// 	scenarios = append(scenarios, scenario{">", vals[0], vals[0], false})
+	// 	scenarios = append(scenarios, scenario{">", vals[0], vals[1], false})
+	// 	scenarios = append(scenarios, scenario{">", vals[1], vals[0], true})
+	// }
 
 	for _, scenario := range scenarios {
 		params := MapParams{"a": scenario[1]}
