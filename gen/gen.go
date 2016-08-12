@@ -27,27 +27,29 @@ import (
   "time"
 )
 
-func buildOp(_o string) func(interface{}, interface{}) interface{} {
-	o := ops[_o]
-	return func(a interface{}, b interface{}) interface{} {
+func applyOp(o op, a interface{}, b interface{}) interface{} {
 `)
 	buf.WriteString("switch x := a.(type) {\n")
 	for _, t1 := range types {
 		buf.WriteString(fmt.Sprintf("  case %v:\n", t1))
+		if t1 == "nil" {
+			buf.WriteString("    return o.nl(a, b)\n")
+			continue
+		}
 		buf.WriteString("  switch y := b.(type) {\n")
 		for _, t2 := range types {
-			buf.WriteString(fmt.Sprintf("    case %v:\n", t2))
 			ex := exprFor(t1, t2)
-			buf.WriteString(fmt.Sprintf("    %v\n", ex))
+			if ex != "" {
+				buf.WriteString(fmt.Sprintf("    case %v:\n", t2))
+				buf.WriteString(fmt.Sprintf("    %v\n", ex))
+			}
 		}
-		buf.WriteString("    default:\n")
-		buf.WriteString("      return o.dflt\n")
 		buf.WriteString("  }\n")
 	}
-	buf.WriteString("  default:\n")
-	buf.WriteString("    return o.dflt\n")
-	buf.WriteString("}\n}\n}")
-	outfile := filepath.Join("../ops.go")
+	buf.WriteString(`}
+return o.dflt
+}`)
+	outfile := filepath.Join("../apply.go")
 	err := ioutil.WriteFile(outfile, buf.Bytes(), 0644)
 	if err != nil {
 		panic(err)
@@ -58,61 +60,31 @@ func buildOp(_o string) func(interface{}, interface{}) interface{} {
 func exprFor(t1 string, t2 string) string {
 	switch t1 {
 	case "nil":
-		switch t2 {
-		case "nil":
-			return `return o.nl(x, y)`
-		case "bool":
-			return `return o.bl(false, y)`
-		case "byte", "uint16", "uint32", "uint64", "uint":
-			return `return o.uin(0, uint64(y))`
-		case "int8", "int16", "int32", "int64", "int":
-			return `return o.sin(0, int64(y))`
-		case "float32", "float64":
-			return `return o.fl(0, float64(y))`
-		case "string":
-			return `return o.st("", y)`
-		case "time.Time":
-			return `return o.ts(zeroTime, y)`
-		default:
-			return `return o.dflt`
-		}
+		return `return o.nl(a, b)`
 	case "bool":
 		switch t2 {
 		case "nil":
-			return `return o.bl(x, false)`
+			return `return o.nl(a, b)`
 		case "bool":
 			return `return o.bl(x, y)`
-		case "byte", "uint16", "uint32", "uint64", "uint", "int8", "int16", "int32", "int64", "int", "float32", "float64":
-			return `if y == 1 {
-  return o.bl(x, true)
-}
-if y == 0 {
-	return o.bl(x, false)
-}
-return o.dflt`
+		case "byte", "uint16", "uint32", "uint64", "uint":
+			return `return o.uin(boolToUInt(x), uint64(y))`
+		case "int8", "int16", "int32", "int64", "int":
+			return `return o.sin(boolToInt(x), int64(y))`
+		case "float32", "float64":
+			return `return o.fl(boolToFloat(x), float64(y))`
 		case "string":
-			return `bv, ok := strToBool(y)
-if !ok {
-	return o.dflt
-}
-return o.bl(x, bv)`
-		case "time.Time":
-			return `return o.bl(x, timeToBool(y))`
-		default:
-			return `return o.dflt`
+			return `yb, ok := strToBool(y)
+if ok {
+	return o.bl(x, yb)
+}`
 		}
 	case "byte", "uint16", "uint32", "uint64", "uint":
 		switch t2 {
 		case "nil":
-			return `return o.nl(x, y)`
+			return `return o.nl(a, b)`
 		case "bool":
-			return `if x == 1 {
-  return o.bl(true, y)
-}
-if x == 0 {
-	return o.bl(false, y)
-}
-return o.dflt`
+			return `return o.uin(uint64(x), boolToUInt(y))`
 		case "byte", "uint16", "uint32", "uint64", "uint":
 			return `return o.uin(uint64(x), uint64(y))`
 		case "int8", "int16", "int32", "int64", "int":
@@ -120,122 +92,70 @@ return o.dflt`
 		case "float32", "float64":
 			return `return o.fl(float64(x), float64(y))`
 		case "string":
-			return `nv, ok := strToFloat(y)
-if !ok {
-	return o.dflt
-}
-return o.fl(float64(x), nv)`
-		case "time.Time":
-			return `return o.uin(uint64(x), timeToUint(y))`
-		default:
-			return `return o.dflt`
+			return `yf, ok := strToFloat(y)
+if ok {
+	return o.fl(float64(x), yf)
+}`
 		}
 	case "int8", "int16", "int32", "int64", "int":
 		switch t2 {
 		case "nil":
-			return `return o.nl(x, y)`
+			return `return o.nl(a, b)`
 		case "bool":
-			return `if x == 1 {
-  return o.bl(true, y)
-}
-if x == 0 {
-	return o.bl(false, y)
-}
-return o.dflt`
+			return `return o.sin(int64(x), boolToInt(y))`
 		case "byte", "uint16", "uint32", "uint64", "uint", "int8", "int16", "int32", "int64", "int":
 			return `return o.sin(int64(x), int64(y))`
 		case "float32", "float64":
 			return `return o.fl(float64(x), float64(y))`
 		case "string":
-			return `nv, ok := strToFloat(y)
-if !ok {
-	return o.dflt
-}
-return o.fl(float64(x), nv)`
-		case "time.Time":
-			return `return o.sin(int64(x), timeToInt(y))`
-		default:
-			return `return o.dflt`
+			return `yf, ok := strToFloat(y)
+if ok {
+	return o.fl(float64(x), yf)
+}`
 		}
 	case "float32", "float64":
 		switch t2 {
 		case "nil":
-			return `return o.nl(x, y)`
+			return `return o.nl(a, b)`
 		case "bool":
-			return `if x == 1 {
-  return o.bl(true, y)
-}
-if x == 0 {
-	return o.bl(false, y)
-}
-return o.dflt`
+			return `return o.fl(float64(x), boolToFloat(y))`
 		case "byte", "uint16", "uint32", "uint64", "uint", "int8", "int16", "int32", "int64", "int", "float32", "float64":
 			return `return o.fl(float64(x), float64(y))`
 		case "string":
-			return `nv, ok := strToFloat(y)
-if !ok {
-	return o.dflt
-}
-return o.fl(float64(x), nv)`
-		case "time.Time":
-			return `return o.fl(float64(x), timeToFloat(y))`
-		default:
-			return `return o.dflt`
+			return `yf, ok := strToFloat(y)
+if ok {
+	return o.fl(float64(x), yf)
+}`
 		}
 	case "string":
 		switch t2 {
 		case "nil":
-			return `return o.st(x, "")`
+			return `return o.nl(a, b)`
 		case "bool":
-			return `bv, ok := strToBool(x)
-if !ok {
-	return o.dflt
-}
-return o.bl(bv, y)`
-		case "byte", "uint16", "uint32", "uint64", "uint":
-			return `nv, ok := strToFloat(x)
-if !ok {
-	return o.dflt
-}
-return o.fl(nv, float64(y))`
-		case "int8", "int16", "int32", "int64", "int":
-			return `nv, ok := strToFloat(x)
-if !ok {
-	return o.dflt
-}
-return o.fl(nv, float64(y))`
-		case "float32", "float64":
-			return `nv, ok := strToFloat(x)
-if !ok {
-	return o.dflt
-}
-return o.fl(nv, float64(y))`
+			return `xb, ok := strToBool(x)
+if ok {
+	return o.bl(xb, y)
+}`
+		case "byte", "uint16", "uint32", "uint64", "uint", "int8", "int16", "int32", "int64", "int", "float32", "float64":
+			return `xf, ok := strToFloat(x)
+if ok {
+	return o.fl(xf, float64(y))
+}`
 		case "string":
 			return `return o.st(x, y)`
 		case "time.Time":
 			return `return o.st(x, y.String())`
-		default:
-			return `return o.dflt`
 		}
 	case "time.Time":
 		switch t2 {
 		case "nil":
-			return `return o.ts(x, zeroTime)`
-		case "bool":
-			return `return o.bl(timeToBool(x), y)`
-		case "byte", "uint16", "uint32", "uint64", "uint":
-			return `return o.uin(timeToUint(x), uint64(y))`
-		case "int8", "int16", "int32", "int64", "int":
-			return `return o.sin(timeToInt(x), int64(y))`
-		case "float32", "float64":
-			return `return o.fl(timeToFloat(x), float64(y))`
+			return `return o.nl(a, b)`
 		case "string":
 			return `return o.st(x.String(), y)`
 		case "time.Time":
 			return `return o.ts(x, y)`
-		default:
-			return `return o.dflt`
 		}
 	}
-	return `return o.dflt`
+
+	return ""
 }
