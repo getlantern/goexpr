@@ -1,6 +1,7 @@
 package goexpr
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -8,6 +9,10 @@ import (
 )
 
 type scenario [4]interface{}
+
+func (s scenario) String() string {
+	return fmt.Sprintf("%s %s %s %v", s[1], s[0], s[2], s[3])
+}
 
 func TestBinaryComparisons(t *testing.T) {
 	now := time.Now()
@@ -43,7 +48,7 @@ func TestBinaryComparisons(t *testing.T) {
 		scenario{"=", 0, 0.1, false},
 		scenario{"=", 0, "0", true},
 		scenario{"=", 0, "0.0", true},
-		scenario{"=", 0, time.Time{}, false},
+		scenario{"=", 0, time.Time{}, true},
 		scenario{"=", 0, now, false},
 		scenario{"=", now.String(), now, true},
 

@@ -37,53 +37,6 @@ func (e *binaryExpr) Eval(params Params) interface{} {
 	return e.operator(e.left.Eval(params), e.right.Eval(params))
 }
 
-func buildOp(_oper string) func(interface{}, interface{}) interface{} {
-	oper := ops[_oper]
-	return func(a interface{}, b interface{}) interface{} {
-		switch x := a.(type) {
-		case nil:
-			switch y := b.(type) {
-			case nil:
-				return oper.nl(x, y)
-			case bool:
-				return oper.bl(false, y)
-			case byte:
-				return oper.uin(0, uint64(y))
-			case uint16:
-				return oper.uin(0, uint64(y))
-			case uint32:
-				return oper.uin(0, uint64(y))
-			case uint64:
-				return oper.uin(0, uint64(y))
-			case uint:
-				return oper.uin(0, uint64(y))
-			case int8:
-				return oper.sin(0, int64(y))
-			case int16:
-				return oper.sin(0, int64(y))
-			case int32:
-				return oper.sin(0, int64(y))
-			case int64:
-				return oper.sin(0, int64(y))
-			case int:
-				return oper.sin(0, int64(y))
-			case float32:
-				return oper.fl(0, float64(y))
-			case float64:
-				return oper.fl(0, float64(y))
-			case string:
-				return oper.st("", y)
-			case time.Time:
-				return oper.ts(zeroTime, y)
-			default:
-				return oper.dflt
-			}
-		default:
-			return oper.dflt
-		}
-	}
-}
-
 type op struct {
 	nl   func(a interface{}, b interface{}) interface{}
 	bl   func(a bool, b bool) interface{}
@@ -198,7 +151,7 @@ var ops = map[string]op{
 		ts: func(a time.Time, b time.Time) interface{} {
 			return a != b
 		},
-		dflt: false,
+		dflt: true,
 	},
 	"<": op{
 		nl: func(a interface{}, b interface{}) interface{} {
@@ -356,23 +309,28 @@ var ops = map[string]op{
 }
 
 func strToBool(str string) (bool, bool) {
+	if str == "" {
+		return false, true
+	}
 	r, err := strconv.ParseBool(str)
-	return r, err == nil
-}
-
-func strToUint(str string) (uint64, bool) {
-	r, err := strconv.ParseUint(str, 10, 64)
-	return r, err == nil
-}
-
-func strToInt(str string) (int64, bool) {
-	r, err := strconv.ParseInt(str, 10, 64)
 	return r, err == nil
 }
 
 func strToFloat(str string) (float64, bool) {
 	r, err := strconv.ParseFloat(str, 64)
 	return r, err == nil
+}
+
+func timeToUint(t time.Time) uint64 {
+	return uint64(t.Sub(zeroTime))
+}
+
+func timeToInt(t time.Time) int64 {
+	return int64(t.Sub(zeroTime))
+}
+
+func timeToFloat(t time.Time) float64 {
+	return float64(t.Sub(zeroTime))
 }
 
 func timeToBool(t time.Time) bool {

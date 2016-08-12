@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
-	"text/template"
 )
 
 var (
@@ -25,71 +24,29 @@ func main() {
 	buf.WriteString(`package goexpr
 
 import (
-	"strings"
   "time"
 )
 
-var _ops = map[string]func(interface{}, interface{}) interface{} {
+func buildOp(_o string) func(interface{}, interface{}) interface{} {
+	o := ops[_o]
+	return func(a interface{}, b interface{}) interface{} {
 `)
-	for _, _o := range []string{"==", "!=", "<", "<=", ">", ">=", "+", "-", "*", "/"} {
-		o := ops[_o]
-		buf.WriteString(fmt.Sprintf(`"%v": func(a interface{}, b interface{}) interface{} {
-`, _o))
-		buf.WriteString("switch v1 := a.(type) {\n")
-		for _, t1 := range types {
-			buf.WriteString(fmt.Sprintf("  case %v:\n", t1))
-			buf.WriteString("  switch v2 := b.(type) {\n")
-			for _, t2 := range types {
-				buf.WriteString(fmt.Sprintf("    case %v:\n", t2))
-				if t1 == t2 {
-					opString := opForType(o, t1)
-					if opString == "" {
-						buf.WriteString(fmt.Sprintf("    return %v\n", o.dflt))
-						continue
-					}
-					buf.WriteString(fmt.Sprintf("    x, y := v1, v2\n"))
-					buf.WriteString(fmt.Sprintf("    return %v\n", opString))
-					continue
-				}
-				_t1 := t1
-				_t2 := t2
-				v1, v2 := "v1", "v2"
-				x, y := "x", "y"
-				commonType, expr1, expr2 := params(_t1, _t2)
-				if commonType == "" {
-					commonType, expr1, expr2 = params(_t2, _t1)
-					if commonType == "" {
-						panic(fmt.Errorf("Unable to find type conversion for %v -> %v", t1, t2))
-					}
-					v1, v2 = v2, v1
-					x, y = y, x
-				}
-				opString := opForType(o, commonType)
-				if opString == "" {
-					buf.WriteString(fmt.Sprintf("    return %v\n", o.dflt))
-					continue
-				}
-				buf.WriteString(fmt.Sprintf(`var %v %v
-var xok bool
-%v, xok = %v
-var %v %v
-var yok bool
-%v, yok = %v
-if !xok || !yok {
-  return %v
-}
-return %v
-`, x, commonType, x, render(expr1, v1, v2), y, commonType, y, render(expr2, v1, v2), defaultFor(commonType), opString))
-			}
-			buf.WriteString("    default:\n")
-			buf.WriteString(fmt.Sprintf("      return %v\n", o.dflt))
-			buf.WriteString("  }\n")
+	buf.WriteString("switch x := a.(type) {\n")
+	for _, t1 := range types {
+		buf.WriteString(fmt.Sprintf("  case %v:\n", t1))
+		buf.WriteString("  switch y := b.(type) {\n")
+		for _, t2 := range types {
+			buf.WriteString(fmt.Sprintf("    case %v:\n", t2))
+			ex := exprFor(t1, t2)
+			buf.WriteString(fmt.Sprintf("    %v\n", ex))
 		}
-		buf.WriteString("  default:\n")
-		buf.WriteString(fmt.Sprintf("    return %v\n", o.dflt))
-		buf.WriteString("}\n},\n")
+		buf.WriteString("    default:\n")
+		buf.WriteString("      return o.dflt\n")
+		buf.WriteString("  }\n")
 	}
-	buf.WriteString("}\n")
+	buf.WriteString("  default:\n")
+	buf.WriteString("    return o.dflt\n")
+	buf.WriteString("}\n}\n}")
 	outfile := filepath.Join("../ops.go")
 	err := ioutil.WriteFile(outfile, buf.Bytes(), 0644)
 	if err != nil {
@@ -98,183 +55,187 @@ return %v
 	fmt.Printf("Wrote to %v\n", outfile)
 }
 
-func opForType(o op, t string) string {
-	switch t {
+func exprFor(t1 string, t2 string) string {
+	switch t1 {
 	case "nil":
-		return o.nl
-	case "bool":
-		return o.bl
-	case "string":
-		return o.st
-	case "time.Time":
-		return o.ts
-	default:
-		return o.nu
-	}
-}
-
-func defaultFor(t string) string {
-	switch t {
-	case "bool":
-		return `false`
-	case "string":
-		return `""`
-	case "time.Time":
-		return `zeroTime`
-	default:
-		return `0`
-	}
-}
-
-func render(tmpl, self, other string) string {
-	buf := bytes.NewBuffer(nil)
-	err := template.Must(template.New("tmpl").Parse(tmpl)).Execute(buf, map[string]interface{}{"s": self, "o": other})
-	if err != nil {
-		panic(err)
-	}
-	return buf.String()
-}
-
-func params(from string, to string) (commonType string, expr1 string, expr2 string) {
-	switch from {
-	case "nil":
-		switch to {
+		switch t2 {
 		case "nil":
-			return to, `{{.s}}, true`, `{{.o}}, true`
+			return `return o.nl(x, y)`
 		case "bool":
-			return to, `false, true`, `{{.o}}, true`
-		case "byte", "uint16", "uint32", "uint64", "uint", "int8", "int16", "int32", "int64", "int", "float32", "float64":
-			return to, `0, true`, `{{.o}}, true`
+			return `return o.bl(false, y)`
+		case "byte", "uint16", "uint32", "uint64", "uint":
+			return `return o.uin(0, uint64(y))`
+		case "int8", "int16", "int32", "int64", "int":
+			return `return o.sin(0, int64(y))`
+		case "float32", "float64":
+			return `return o.fl(0, float64(y))`
 		case "string":
-			return to, `"", true`, `{{.o}}, true`
+			return `return o.st("", y)`
 		case "time.Time":
-			return to, `time.Time{}, true`, `{{.o}}, true`
+			return `return o.ts(zeroTime, y)`
+		default:
+			return `return o.dflt`
 		}
 	case "bool":
-		switch to {
+		switch t2 {
+		case "nil":
+			return `return o.bl(x, false)`
+		case "bool":
+			return `return o.bl(x, y)`
 		case "byte", "uint16", "uint32", "uint64", "uint", "int8", "int16", "int32", "int64", "int", "float32", "float64":
-			return "bool", `{{.s}}, true`, `{{.o}} == 1, true`
+			return `if y == 1 {
+  return o.bl(x, true)
+}
+if y == 0 {
+	return o.bl(x, false)
+}
+return o.dflt`
 		case "string":
-			return "bool", `{{.s}}, true`, `strToBool({{.o}})`
+			return `bv, ok := strToBool(y)
+if !ok {
+	return o.dflt
+}
+return o.bl(x, bv)`
 		case "time.Time":
-			return "bool", `{{.s}}, true`, `timeToBool({{.o}}), true`
-		}
-	case "string":
-		switch to {
-		case "byte", "uint16", "uint32", "uint64", "uint":
-			return "uint64", `strToUint({{.s}})`, `uint64({{.o}}), true`
-		case "int8", "int16", "int32", "int64", "int":
-			return "int64", `strToInt({{.s}})`, `int64({{.o}}), true`
-		case "float32", "float64":
-			return "float64", `strToFloat({{.s}})`, `float64({{.o}}), true`
-		case "time.Time":
-			return "string", `{{.s}}, true`, `{{.o}}.String(), true`
+			return `return o.bl(x, timeToBool(y))`
+		default:
+			return `return o.dflt`
 		}
 	case "byte", "uint16", "uint32", "uint64", "uint":
-		switch to {
+		switch t2 {
+		case "nil":
+			return `return o.nl(x, y)`
+		case "bool":
+			return `if x == 1 {
+  return o.bl(true, y)
+}
+if x == 0 {
+	return o.bl(false, y)
+}
+return o.dflt`
 		case "byte", "uint16", "uint32", "uint64", "uint":
-			return "uint64", `uint64({{.s}}), true`, `uint64({{.o}}), true`
+			return `return o.uin(uint64(x), uint64(y))`
 		case "int8", "int16", "int32", "int64", "int":
-			return "int64", `int64({{.s}}), true`, `int64({{.o}}), true`
+			return `return o.sin(int64(x), int64(y))`
 		case "float32", "float64":
-			return "float64", `float64({{.s}}), true`, `float64({{.o}}), true`
+			return `return o.fl(float64(x), float64(y))`
+		case "string":
+			return `nv, ok := strToFloat(y)
+if !ok {
+	return o.dflt
+}
+return o.fl(float64(x), nv)`
 		case "time.Time":
-			return "time.Time", `time.Unix(int64({{.s}}), 0), true`, `{{.o}}, true`
+			return `return o.uin(uint64(x), timeToUint(y))`
+		default:
+			return `return o.dflt`
 		}
 	case "int8", "int16", "int32", "int64", "int":
-		switch to {
-		case "int8", "int16", "int32", "int64", "int":
-			return "int64", `int64({{.s}}), true`, `int64({{.o}}), true`
+		switch t2 {
+		case "nil":
+			return `return o.nl(x, y)`
+		case "bool":
+			return `if x == 1 {
+  return o.bl(true, y)
+}
+if x == 0 {
+	return o.bl(false, y)
+}
+return o.dflt`
+		case "byte", "uint16", "uint32", "uint64", "uint", "int8", "int16", "int32", "int64", "int":
+			return `return o.sin(int64(x), int64(y))`
 		case "float32", "float64":
-			return "float64", `float64({{.s}}), true`, `float64({{.o}}), true`
+			return `return o.fl(float64(x), float64(y))`
+		case "string":
+			return `nv, ok := strToFloat(y)
+if !ok {
+	return o.dflt
+}
+return o.fl(float64(x), nv)`
 		case "time.Time":
-			return "time.Time", `time.Unix(int64({{.s}}), 0), true`, `{{.o}}, true`
+			return `return o.sin(int64(x), timeToInt(y))`
+		default:
+			return `return o.dflt`
 		}
 	case "float32", "float64":
-		switch to {
-		case "float32", "float64":
-			return "float64", `float64({{.s}}), true`, `float64({{.o}}), true`
+		switch t2 {
+		case "nil":
+			return `return o.nl(x, y)`
+		case "bool":
+			return `if x == 1 {
+  return o.bl(true, y)
+}
+if x == 0 {
+	return o.bl(false, y)
+}
+return o.dflt`
+		case "byte", "uint16", "uint32", "uint64", "uint", "int8", "int16", "int32", "int64", "int", "float32", "float64":
+			return `return o.fl(float64(x), float64(y))`
+		case "string":
+			return `nv, ok := strToFloat(y)
+if !ok {
+	return o.dflt
+}
+return o.fl(float64(x), nv)`
 		case "time.Time":
-			return "time.Time", `time.Unix(int64({{.s}}), 0), true`, `{{.o}}, true`
+			return `return o.fl(float64(x), timeToFloat(y))`
+		default:
+			return `return o.dflt`
+		}
+	case "string":
+		switch t2 {
+		case "nil":
+			return `return o.st(x, "")`
+		case "bool":
+			return `bv, ok := strToBool(x)
+if !ok {
+	return o.dflt
+}
+return o.bl(bv, y)`
+		case "byte", "uint16", "uint32", "uint64", "uint":
+			return `nv, ok := strToFloat(x)
+if !ok {
+	return o.dflt
+}
+return o.fl(nv, float64(y))`
+		case "int8", "int16", "int32", "int64", "int":
+			return `nv, ok := strToFloat(x)
+if !ok {
+	return o.dflt
+}
+return o.fl(nv, float64(y))`
+		case "float32", "float64":
+			return `nv, ok := strToFloat(x)
+if !ok {
+	return o.dflt
+}
+return o.fl(nv, float64(y))`
+		case "string":
+			return `return o.st(x, y)`
+		case "time.Time":
+			return `return o.st(x, y.String())`
+		default:
+			return `return o.dflt`
+		}
+	case "time.Time":
+		switch t2 {
+		case "nil":
+			return `return o.ts(x, zeroTime)`
+		case "bool":
+			return `return o.bl(timeToBool(x), y)`
+		case "byte", "uint16", "uint32", "uint64", "uint":
+			return `return o.uin(timeToUint(x), uint64(y))`
+		case "int8", "int16", "int32", "int64", "int":
+			return `return o.sin(timeToInt(x), int64(y))`
+		case "float32", "float64":
+			return `return o.fl(timeToFloat(x), float64(y))`
+		case "string":
+			return `return o.st(x.String(), y)`
+		case "time.Time":
+			return `return o.ts(x, y)`
+		default:
+			return `return o.dflt`
 		}
 	}
-
-	return "", "", ""
-}
-
-type op struct {
-	nl   string
-	nu   string
-	bl   string
-	st   string
-	ts   string
-	dflt string
-}
-
-var ops = map[string]op{
-	"==": op{
-		nl:   "true",
-		nu:   "x == y",
-		bl:   "x == y",
-		st:   "x == y",
-		ts:   "x == y",
-		dflt: "false",
-	},
-	"!=": op{
-		nl:   "false",
-		nu:   "x != y",
-		bl:   "x != y",
-		st:   "x == y",
-		ts:   "x != y",
-		dflt: "false",
-	},
-	"<": op{
-		nl:   "false",
-		nu:   "x < y",
-		bl:   "!x && y",
-		st:   "strings.Compare(x, y) < 0",
-		ts:   "x.Before(y)",
-		dflt: "false",
-	},
-	"<=": op{
-		nl:   "true",
-		nu:   "x <= y",
-		bl:   "true",
-		st:   "strings.Compare(x, y) <= 0",
-		ts:   "!x.After(y)",
-		dflt: "false",
-	},
-	">": op{
-		nl:   "false",
-		nu:   "x > y",
-		bl:   "x && !y",
-		st:   "strings.Compare(x, y) > 0",
-		ts:   "x.After(y)",
-		dflt: "false",
-	},
-	">=": op{
-		nl:   "true",
-		nu:   "x >= y",
-		bl:   "true",
-		st:   "strings.Compare(x, y) >= 0",
-		ts:   "!x.Before(y)",
-		dflt: "false",
-	},
-	"+": op{
-		nu:   "x + y",
-		st:   "x + y",
-		dflt: "0",
-	},
-	"-": op{
-		nu:   "x - y",
-		dflt: "0",
-	},
-	"*": op{
-		nu:   "x * y",
-		dflt: "0",
-	},
-	"/": op{
-		nu:   "div(x, y)",
-		dflt: "0",
-	},
+	return `return o.dflt`
 }
