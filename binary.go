@@ -13,18 +13,32 @@ var (
 
 func Binary(operator string, left Expr, right Expr) (Expr, error) {
 	// Normalize equals and not equals
+	needsNot := false
 	switch operator {
 	case "=":
 		operator = "=="
 	case "<>":
 		operator = "!="
+	case "NOT LIKE":
+		operator = "LIKE"
+		needsNot = true
 	}
 	o, found := ops[operator]
 	if !found {
 		return nil, fmt.Errorf("No op for %v", operator)
 	}
+	ofn := buildOpFN(o)
+	if needsNot {
+		ofn = not(ofn)
+	}
 	// Fill in the blanks
-	return &binaryExpr{operator, buildOpFN(o), left, right}, nil
+	return &binaryExpr{operator, ofn, left, right}, nil
+}
+
+func not(operator opFN) opFN {
+	return func(a interface{}, b interface{}) interface{} {
+		return !operator(a, b).(bool)
+	}
 }
 
 type opFN func(a interface{}, b interface{}) interface{}
@@ -118,14 +132,21 @@ var ops = map[string]op{
 		st: func(a string, b string) interface{} {
 			lb := len(b)
 			last := lb - 1
-			startWildcard := b[0] == '%'
 			endWildcard := b[last] == '%'
 			if endWildcard {
 				b = b[:last]
 			}
+			if len(b) == 0 {
+				return true
+			}
+			startWildcard := b[0] == '%'
 			if startWildcard {
 				b = b[1:]
 			}
+			if !startWildcard && !endWildcard {
+				return a == b
+			}
+			lb = len(b)
 			if lb == 0 {
 				return true
 			}
@@ -139,7 +160,7 @@ var ops = map[string]op{
 			if endWildcard {
 				return a[:lb] == b
 			}
-			return a[lb-la:] == b
+			return a[la-lb:] == b
 		},
 		ts: func(a time.Time, b time.Time) interface{} {
 			return a == b
@@ -263,6 +284,54 @@ var ops = map[string]op{
 		},
 		ts: func(a time.Time, b time.Time) interface{} {
 			return !a.Before(b)
+		},
+		dflt: false,
+	},
+	"AND": op{
+		nl: func(a interface{}, b interface{}) interface{} {
+			return false
+		},
+		bl: func(a bool, b bool) interface{} {
+			return a && b
+		},
+		uin: func(a uint64, b uint64) interface{} {
+			return false
+		},
+		sin: func(a int64, b int64) interface{} {
+			return false
+		},
+		fl: func(a float64, b float64) interface{} {
+			return false
+		},
+		st: func(a string, b string) interface{} {
+			return false
+		},
+		ts: func(a time.Time, b time.Time) interface{} {
+			return false
+		},
+		dflt: false,
+	},
+	"OR": op{
+		nl: func(a interface{}, b interface{}) interface{} {
+			return false
+		},
+		bl: func(a bool, b bool) interface{} {
+			return a || b
+		},
+		uin: func(a uint64, b uint64) interface{} {
+			return false
+		},
+		sin: func(a int64, b int64) interface{} {
+			return false
+		},
+		fl: func(a float64, b float64) interface{} {
+			return false
+		},
+		st: func(a string, b string) interface{} {
+			return false
+		},
+		ts: func(a time.Time, b time.Time) interface{} {
+			return false
 		},
 		dflt: false,
 	},
@@ -438,84 +507,3 @@ func div(x interface{}, y interface{}) interface{} {
 	}
 	return 0
 }
-
-// func coerce(a interface{}, b interface{}) (c coercedTo, a interface{}, b interface{}) {
-// 	switch x := a.(type) {
-// 	case nil:
-// 		return coercedToNil, a, b
-// 	case bool:
-// 		switch y := b.(type) {
-// 		case nil:
-// 			return coercedToNil, a, b
-// 		case bool:
-// 			return coercedToBool, x, y
-// 		case byte:
-// 			return coercedToUInt, boolToUInt(x), uint64(y)
-// 		case uint16:
-// 			return coercedToUInt, boolToUInt(x), uint64(y)
-// 		case uint32:
-// 			return coercedToUInt, boolToUInt(x), uint64(y)
-// 		case uint64:
-// 			return coercedToUInt, boolToUInt(x), uint64(y)
-// 		case uint:
-// 			return coercedToUInt, boolToUInt(x), uint64(y)
-// 		case int8:
-// 			return coercedToInt, boolToInt(x), uint64(y)
-// 		case int16:
-// 			return coercedToInt, boolToInt(x), uint64(y)
-// 		case int32:
-// 			return coercedToInt, boolToInt(x), uint64(y)
-// 		case int64:
-// 			return coercedToInt, boolToInt(x), uint64(y)
-// 		case int:
-// 			return coercedToInt, boolToInt(x), uint64(y)
-// 		case float32:
-// 			return coercedToFloat, boolToFloat(x), uint64(y)
-// 		case float64:
-// 			return coercedToFloat, boolToFloat(x), uint64(y)
-// 		case string:
-// 			yb, ok := strToBool(y)
-// 			if ok {
-// 				return coercedToBool, x, yb
-// 			}
-// 		}
-// 	case byte:
-// 		switch y := b.(type) {
-// 		case nil:
-// 			return coercedToNil, a, b
-// 		case bool:
-// 			return coercedToBool, x, y
-// 		case byte:
-// 			return coercedToUInt, boolToUInt(x), uint64(y)
-// 		case uint16:
-// 			return coercedToUInt, boolToUInt(x), uint64(y)
-// 		case uint32:
-// 			return coercedToUInt, boolToUInt(x), uint64(y)
-// 		case uint64:
-// 			return coercedToUInt, boolToUInt(x), uint64(y)
-// 		case uint:
-// 			return coercedToUInt, boolToUInt(x), uint64(y)
-// 		case int8:
-// 			return coercedToInt, boolToInt(x), uint64(y)
-// 		case int16:
-// 			return coercedToInt, boolToInt(x), uint64(y)
-// 		case int32:
-// 			return coercedToInt, boolToInt(x), uint64(y)
-// 		case int64:
-// 			return coercedToInt, boolToInt(x), uint64(y)
-// 		case int:
-// 			return coercedToInt, boolToInt(x), uint64(y)
-// 		case float32:
-// 			return coercedToFloat, boolToFloat(x), uint64(y)
-// 		case float64:
-// 			return coercedToFloat, boolToFloat(x), uint64(y)
-// 		case string:
-// 			yb, ok := strToBool(y)
-// 			if ok {
-// 				return coercedToBool, x, yb
-// 			}
-// 		}
-// 	}
-//
-// 	return coerceNotAllowed, a, b
-// }
