@@ -2,11 +2,14 @@ package goexpr
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
 
-type op func(a interface{}, b interface{}) interface{}
+var (
+	zeroTime = time.Time{}
+)
 
 func Binary(operator string, left Expr, right Expr) (Expr, error) {
 	// Normalize equals and not equals
@@ -16,30 +19,12 @@ func Binary(operator string, left Expr, right Expr) (Expr, error) {
 	case "<>":
 		operator = "!="
 	}
-
-	// Some operators are just the logical negation or combination of different
-	// operators, use that.
-	var o op
-	switch operator {
-	case "==", "<", ">", "LIKE", "+", "-", "*", "/", "OR", "AND":
-		o = ops[operator]
-	case "!=":
-		o = not(ops["=="])
-	case "<=":
-		o = or(ops["<"], ops["=="])
-	case ">=":
-		o = or(ops[">"], ops["=="])
-	case "NOT LIKE":
-		o = not(ops["LIKE"])
-	default:
-		return nil, fmt.Errorf("Unknown operator %v", operator)
-	}
-	return &binaryExpr{operator, o, left, right}, nil
+	return &binaryExpr{operator, buildOp(operator), left, right}, nil
 }
 
 type binaryExpr struct {
 	operatorString string
-	operator       op
+	operator       func(a interface{}, b interface{}) interface{}
 	left           Expr
 	right          Expr
 }
@@ -48,616 +33,372 @@ func (e *binaryExpr) String() string {
 	return fmt.Sprintf("(%v %v %v)", e.left, e.operatorString, e.right)
 }
 
-func not(operator op) op {
-	return func(a interface{}, b interface{}) interface{} {
-		return !operator(a, b).(bool)
-	}
-}
-
-func or(o1 op, o2 op) op {
-	return func(a interface{}, b interface{}) interface{} {
-		if o1(a, b).(bool) {
-			return true
-		}
-		return o2(a, b).(bool)
-	}
-}
-
 func (e *binaryExpr) Eval(params Params) interface{} {
 	return e.operator(e.left.Eval(params), e.right.Eval(params))
 }
 
+func buildOp(_oper string) func(interface{}, interface{}) interface{} {
+	oper := ops[_oper]
+	return func(a interface{}, b interface{}) interface{} {
+		switch x := a.(type) {
+		case nil:
+			switch y := b.(type) {
+			case nil:
+				return oper.nl(x, y)
+			case bool:
+				return oper.bl(false, y)
+			case byte:
+				return oper.uin(0, uint64(y))
+			case uint16:
+				return oper.uin(0, uint64(y))
+			case uint32:
+				return oper.uin(0, uint64(y))
+			case uint64:
+				return oper.uin(0, uint64(y))
+			case uint:
+				return oper.uin(0, uint64(y))
+			case int8:
+				return oper.sin(0, int64(y))
+			case int16:
+				return oper.sin(0, int64(y))
+			case int32:
+				return oper.sin(0, int64(y))
+			case int64:
+				return oper.sin(0, int64(y))
+			case int:
+				return oper.sin(0, int64(y))
+			case float32:
+				return oper.fl(0, float64(y))
+			case float64:
+				return oper.fl(0, float64(y))
+			case string:
+				return oper.st("", y)
+			case time.Time:
+				return oper.ts(zeroTime, y)
+			default:
+				return oper.dflt
+			}
+		default:
+			return oper.dflt
+		}
+	}
+}
+
+type op struct {
+	nl   func(a interface{}, b interface{}) interface{}
+	bl   func(a bool, b bool) interface{}
+	uin  func(a uint64, b uint64) interface{}
+	sin  func(a int64, b int64) interface{}
+	fl   func(a float64, b float64) interface{}
+	st   func(a string, b string) interface{}
+	ts   func(a time.Time, b time.Time) interface{}
+	dflt interface{}
+}
+
 var ops = map[string]op{
-	"==": eq,
-	"<": func(a interface{}, b interface{}) interface{} {
-		if b == nil {
-			return false
-		}
-		if a == nil {
+	"==": op{
+		nl: func(a interface{}, b interface{}) interface{} {
+			if a == nil {
+				return b == nil
+			}
 			return true
-		}
-		switch v := a.(type) {
-		case bool:
-			switch v2 := b.(type) {
-			case bool:
-				return !v && v2
-			default:
-				return false
-			}
-		case byte:
-			switch v2 := b.(type) {
-			case byte:
-				return v < v2
-			default:
-				return false
-			}
-		case uint16:
-			switch v2 := b.(type) {
-			case uint16:
-				return v < v2
-			default:
-				return false
-			}
-		case uint32:
-			switch v2 := b.(type) {
-			case uint32:
-				return v < v2
-			default:
-				return false
-			}
-		case uint64:
-			switch v2 := b.(type) {
-			case uint64:
-				return v < v2
-			default:
-				return false
-			}
-		case int8:
-			switch v2 := b.(type) {
-			case int8:
-				return v < v2
-			default:
-				return false
-			}
-		case int16:
-			switch v2 := b.(type) {
-			case int16:
-				return v < v2
-			default:
-				return false
-			}
-		case int32:
-			switch v2 := b.(type) {
-			case int32:
-				return v < v2
-			default:
-				return false
-			}
-		case int64:
-			switch v2 := b.(type) {
-			case int64:
-				return v < v2
-			default:
-				return false
-			}
-		case int:
-			switch v2 := b.(type) {
-			case int:
-				return v < v2
-			default:
-				return false
-			}
-		case float32:
-			switch v2 := b.(type) {
-			case float32:
-				return v < v2
-			default:
-				return false
-			}
-		case float64:
-			switch v2 := b.(type) {
-			case float64:
-				return v < v2
-			default:
-				return false
-			}
-		case string:
-			switch v2 := b.(type) {
-			case string:
-				return v < v2
-			default:
-				return false
-			}
-		case time.Time:
-			switch v2 := b.(type) {
-			case time.Time:
-				return v.Before(v2)
-			default:
-				return false
-			}
-		default:
-			return false
-		}
+		},
+		bl: func(a bool, b bool) interface{} {
+			return a == b
+		},
+		uin: func(a uint64, b uint64) interface{} {
+			return a == b
+		},
+		sin: func(a int64, b int64) interface{} {
+			return a == b
+		},
+		fl: func(a float64, b float64) interface{} {
+			return a == b
+		},
+		st: func(a string, b string) interface{} {
+			return a == b
+		},
+		ts: func(a time.Time, b time.Time) interface{} {
+			return a == b
+		},
+		dflt: false,
 	},
-	">": func(a interface{}, b interface{}) interface{} {
-		if a == nil {
-			return false
-		}
-		if b == nil {
+	"LIKE": op{
+		nl: func(a interface{}, b interface{}) interface{} {
+			if a == nil {
+				return b == nil
+			}
 			return true
-		}
-		switch v := a.(type) {
-		case bool:
-			switch v2 := b.(type) {
-			case bool:
-				return v && !v2
-			default:
+		},
+		bl: func(a bool, b bool) interface{} {
+			return a == b
+		},
+		uin: func(a uint64, b uint64) interface{} {
+			return a == b
+		},
+		sin: func(a int64, b int64) interface{} {
+			return a == b
+		},
+		fl: func(a float64, b float64) interface{} {
+			return a == b
+		},
+		st: func(a string, b string) interface{} {
+			lb := len(b)
+			last := lb - 1
+			startWildcard := b[0] == '%'
+			endWildcard := b[last] == '%'
+			if endWildcard {
+				b = b[:last]
+			}
+			if startWildcard {
+				b = b[1:]
+			}
+			if lb == 0 {
+				return true
+			}
+			if startWildcard && endWildcard {
+				return strings.Contains(a, b)
+			}
+			la := len(a)
+			if la < lb {
 				return false
 			}
-		case byte:
-			switch v2 := b.(type) {
-			case byte:
-				return v > v2
-			default:
-				return false
+			if endWildcard {
+				return a[:lb] == b
 			}
-		case uint16:
-			switch v2 := b.(type) {
-			case uint16:
-				return v > v2
-			default:
-				return false
-			}
-		case uint32:
-			switch v2 := b.(type) {
-			case uint32:
-				return v > v2
-			default:
-				return false
-			}
-		case uint64:
-			switch v2 := b.(type) {
-			case uint64:
-				return v > v2
-			default:
-				return false
-			}
-		case int8:
-			switch v2 := b.(type) {
-			case int8:
-				return v > v2
-			default:
-				return false
-			}
-		case int16:
-			switch v2 := b.(type) {
-			case int16:
-				return v > v2
-			default:
-				return false
-			}
-		case int32:
-			switch v2 := b.(type) {
-			case int32:
-				return v > v2
-			default:
-				return false
-			}
-		case int64:
-			switch v2 := b.(type) {
-			case int64:
-				return v > v2
-			default:
-				return false
-			}
-		case int:
-			switch v2 := b.(type) {
-			case int:
-				return v > v2
-			default:
-				return false
-			}
-		case float32:
-			switch v2 := b.(type) {
-			case float32:
-				return v > v2
-			default:
-				return false
-			}
-		case float64:
-			switch v2 := b.(type) {
-			case float64:
-				return v > v2
-			default:
-				return false
-			}
-		case string:
-			switch v2 := b.(type) {
-			case string:
-				return v > v2
-			default:
-				return false
-			}
-		case time.Time:
-			switch v2 := b.(type) {
-			case time.Time:
-				return v.After(v2)
-			default:
-				return false
-			}
-		default:
-			return false
-		}
+			return a[lb-la:] == b
+		},
+		ts: func(a time.Time, b time.Time) interface{} {
+			return a == b
+		},
+		dflt: false,
 	},
-	"LIKE": func(a interface{}, b interface{}) interface{} {
-		if a == nil {
+	"!=": op{
+		nl: func(a interface{}, b interface{}) interface{} {
+			if a == nil {
+				return b != nil
+			}
 			return b == nil
-		}
-		if b == nil {
-			return false
-		}
-		switch v := a.(type) {
-		case string:
-			switch v2 := b.(type) {
-			case string:
-				return strings.Contains(v, v2)
-			default:
-				return strings.Contains(v, fmt.Sprint(b))
-			}
-		default:
-			return eq(a, b)
-		}
+		},
+		bl: func(a bool, b bool) interface{} {
+			return a != b
+		},
+		uin: func(a uint64, b uint64) interface{} {
+			return a != b
+		},
+		sin: func(a int64, b int64) interface{} {
+			return a != b
+		},
+		fl: func(a float64, b float64) interface{} {
+			return a != b
+		},
+		st: func(a string, b string) interface{} {
+			return a != b
+		},
+		ts: func(a time.Time, b time.Time) interface{} {
+			return a != b
+		},
+		dflt: false,
 	},
-	"+": func(a interface{}, b interface{}) interface{} {
-		if a == nil || b == nil {
-			return 0
-		}
-		switch v := a.(type) {
-		case uint16:
-			switch v2 := b.(type) {
-			case uint16:
-				return v + v2
-			default:
-				return 0
-			}
-		case uint32:
-			switch v2 := b.(type) {
-			case uint32:
-				return v + v2
-			default:
-				return 0
-			}
-		case uint64:
-			switch v2 := b.(type) {
-			case uint64:
-				return v + v2
-			default:
-				return 0
-			}
-		case int8:
-			switch v2 := b.(type) {
-			case int8:
-				return v + v2
-			default:
-				return 0
-			}
-		case int16:
-			switch v2 := b.(type) {
-			case int16:
-				return v + v2
-			default:
-				return 0
-			}
-		case int32:
-			switch v2 := b.(type) {
-			case int32:
-				return v + v2
-			default:
-				return 0
-			}
-		case int64:
-			switch v2 := b.(type) {
-			case int64:
-				return v + v2
-			default:
-				return 0
-			}
-		case int:
-			switch v2 := b.(type) {
-			case int:
-				return v + v2
-			default:
-				return 0
-			}
-		case float32:
-			switch v2 := b.(type) {
-			case float32:
-				return v + v2
-			default:
-				return 0
-			}
-		case float64:
-			switch v2 := b.(type) {
-			case float64:
-				return v + v2
-			default:
-				return 0
-			}
-		default:
-			return 0
-		}
+	"<": op{
+		nl: func(a interface{}, b interface{}) interface{} {
+			return a == nil && b != nil
+		},
+		bl: func(a bool, b bool) interface{} {
+			return !a && b
+		},
+		uin: func(a uint64, b uint64) interface{} {
+			return a < b
+		},
+		sin: func(a int64, b int64) interface{} {
+			return a < b
+		},
+		fl: func(a float64, b float64) interface{} {
+			return a < b
+		},
+		st: func(a string, b string) interface{} {
+			return a < b
+		},
+		ts: func(a time.Time, b time.Time) interface{} {
+			return a.Before(b)
+		},
+		dflt: false,
 	},
-	"-": func(a interface{}, b interface{}) interface{} {
-		if a == nil || b == nil {
-			return 0
-		}
-		switch v := a.(type) {
-		case uint16:
-			switch v2 := b.(type) {
-			case uint16:
-				return v - v2
-			default:
-				return 0
-			}
-		case uint32:
-			switch v2 := b.(type) {
-			case uint32:
-				return v - v2
-			default:
-				return 0
-			}
-		case uint64:
-			switch v2 := b.(type) {
-			case uint64:
-				return v - v2
-			default:
-				return 0
-			}
-		case int8:
-			switch v2 := b.(type) {
-			case int8:
-				return v - v2
-			default:
-				return 0
-			}
-		case int16:
-			switch v2 := b.(type) {
-			case int16:
-				return v - v2
-			default:
-				return 0
-			}
-		case int32:
-			switch v2 := b.(type) {
-			case int32:
-				return v - v2
-			default:
-				return 0
-			}
-		case int64:
-			switch v2 := b.(type) {
-			case int64:
-				return v - v2
-			default:
-				return 0
-			}
-		case int:
-			switch v2 := b.(type) {
-			case int:
-				return v - v2
-			default:
-				return 0
-			}
-		case float32:
-			switch v2 := b.(type) {
-			case float32:
-				return v - v2
-			default:
-				return 0
-			}
-		case float64:
-			switch v2 := b.(type) {
-			case float64:
-				return v - v2
-			default:
-				return 0
-			}
-		default:
-			return 0
-		}
+	"<=": op{
+		nl: func(a interface{}, b interface{}) interface{} {
+			return a == nil
+		},
+		bl: func(a bool, b bool) interface{} {
+			return true
+		},
+		uin: func(a uint64, b uint64) interface{} {
+			return a <= b
+		},
+		sin: func(a int64, b int64) interface{} {
+			return a <= b
+		},
+		fl: func(a float64, b float64) interface{} {
+			return a <= b
+		},
+		st: func(a string, b string) interface{} {
+			return a <= b
+		},
+		ts: func(a time.Time, b time.Time) interface{} {
+			return !a.After(b)
+		},
+		dflt: false,
 	},
-	"*": func(a interface{}, b interface{}) interface{} {
-		if a == nil || b == nil {
+	">": op{
+		nl: func(a interface{}, b interface{}) interface{} {
+			return a != nil && b == nil
+		},
+		bl: func(a bool, b bool) interface{} {
+			return a && !b
+		},
+		uin: func(a uint64, b uint64) interface{} {
+			return a > b
+		},
+		sin: func(a int64, b int64) interface{} {
+			return a > b
+		},
+		fl: func(a float64, b float64) interface{} {
+			return a > b
+		},
+		st: func(a string, b string) interface{} {
+			return a > b
+		},
+		ts: func(a time.Time, b time.Time) interface{} {
+			return a.After(b)
+		},
+		dflt: false,
+	},
+	">=": op{
+		nl: func(a interface{}, b interface{}) interface{} {
+			return b == nil
+		},
+		bl: func(a bool, b bool) interface{} {
+			return true
+		},
+		uin: func(a uint64, b uint64) interface{} {
+			return a >= b
+		},
+		sin: func(a int64, b int64) interface{} {
+			return a >= b
+		},
+		fl: func(a float64, b float64) interface{} {
+			return a >= b
+		},
+		st: func(a string, b string) interface{} {
+			return a >= b
+		},
+		ts: func(a time.Time, b time.Time) interface{} {
+			return !a.Before(b)
+		},
+		dflt: false,
+	},
+	"+": op{
+		uin: func(a uint64, b uint64) interface{} {
+			return a + b
+		},
+		sin: func(a int64, b int64) interface{} {
+			return a + b
+		},
+		fl: func(a float64, b float64) interface{} {
+			return a + b
+		},
+		dflt: 0,
+	},
+	"-": op{
+		uin: func(a uint64, b uint64) interface{} {
+			return a - b
+		},
+		sin: func(a int64, b int64) interface{} {
+			return a - b
+		},
+		fl: func(a float64, b float64) interface{} {
+			return a - b
+		},
+		dflt: 0,
+	},
+	"*": op{
+		uin: func(a uint64, b uint64) interface{} {
+			return a * b
+		},
+		sin: func(a int64, b int64) interface{} {
+			return a * b
+		},
+		fl: func(a float64, b float64) interface{} {
+			return a * b
+		},
+		dflt: 0,
+	},
+	"/": op{
+		uin: func(a uint64, b uint64) interface{} {
+			if b == 0 {
+				return uint64(0)
+			}
+			return a / b
+		},
+		sin: func(a int64, b int64) interface{} {
+			if b == 0 {
+				return int64(0)
+			}
+			return a / b
+		},
+		fl: func(a float64, b float64) interface{} {
+			if b == 0 {
+				return 0
+			}
+			return a / b
+		},
+		dflt: 0,
+	},
+}
+
+func strToBool(str string) (bool, bool) {
+	r, err := strconv.ParseBool(str)
+	return r, err == nil
+}
+
+func strToUint(str string) (uint64, bool) {
+	r, err := strconv.ParseUint(str, 10, 64)
+	return r, err == nil
+}
+
+func strToInt(str string) (int64, bool) {
+	r, err := strconv.ParseInt(str, 10, 64)
+	return r, err == nil
+}
+
+func strToFloat(str string) (float64, bool) {
+	r, err := strconv.ParseFloat(str, 64)
+	return r, err == nil
+}
+
+func timeToBool(t time.Time) bool {
+	return !t.IsZero()
+}
+
+func div(x interface{}, y interface{}) interface{} {
+	switch v1 := x.(type) {
+	case uint64:
+		v2 := y.(uint64)
+		if y == 0 {
 			return 0
 		}
-		switch v := a.(type) {
-		case uint16:
-			switch v2 := b.(type) {
-			case uint16:
-				return v * v2
-			default:
-				return 0
-			}
-		case uint32:
-			switch v2 := b.(type) {
-			case uint32:
-				return v * v2
-			default:
-				return 0
-			}
-		case uint64:
-			switch v2 := b.(type) {
-			case uint64:
-				return v * v2
-			default:
-				return 0
-			}
-		case int8:
-			switch v2 := b.(type) {
-			case int8:
-				return v * v2
-			default:
-				return 0
-			}
-		case int16:
-			switch v2 := b.(type) {
-			case int16:
-				return v * v2
-			default:
-				return 0
-			}
-		case int32:
-			switch v2 := b.(type) {
-			case int32:
-				return v * v2
-			default:
-				return 0
-			}
-		case int64:
-			switch v2 := b.(type) {
-			case int64:
-				return v * v2
-			default:
-				return 0
-			}
-		case int:
-			switch v2 := b.(type) {
-			case int:
-				return v * v2
-			default:
-				return 0
-			}
-		case float32:
-			switch v2 := b.(type) {
-			case float32:
-				return v * v2
-			default:
-				return 0
-			}
-		case float64:
-			switch v2 := b.(type) {
-			case float64:
-				return v * v2
-			default:
-				return 0
-			}
-		default:
+		return v1 + v2
+	case int64:
+		v2 := y.(int64)
+		if y == 0 {
 			return 0
 		}
-	},
-	"/": func(a interface{}, b interface{}) interface{} {
-		if a == nil || b == nil {
+		return v1 + v2
+	case float64:
+		v2 := y.(float64)
+		if y == 0 {
 			return 0
 		}
-		switch v := a.(type) {
-		case uint16:
-			switch v2 := b.(type) {
-			case uint16:
-				if v2 == 0 {
-					return 0
-				}
-				return v / v2
-			default:
-				return 0
-			}
-		case uint32:
-			switch v2 := b.(type) {
-			case uint32:
-				if v2 == 0 {
-					return 0
-				}
-				return v / v2
-			default:
-				return 0
-			}
-		case uint64:
-			switch v2 := b.(type) {
-			case uint64:
-				if v2 == 0 {
-					return 0
-				}
-				return v / v2
-			default:
-				return 0
-			}
-		case int8:
-			switch v2 := b.(type) {
-			case int8:
-				if v2 == 0 {
-					return 0
-				}
-				return v / v2
-			default:
-				return 0
-			}
-		case int16:
-			switch v2 := b.(type) {
-			case int16:
-				if v2 == 0 {
-					return 0
-				}
-				return v / v2
-			default:
-				return 0
-			}
-		case int32:
-			switch v2 := b.(type) {
-			case int32:
-				if v2 == 0 {
-					return 0
-				}
-				return v / v2
-			default:
-				return 0
-			}
-		case int64:
-			switch v2 := b.(type) {
-			case int64:
-				if v2 == 0 {
-					return 0
-				}
-				return v / v2
-			default:
-				return 0
-			}
-		case int:
-			switch v2 := b.(type) {
-			case int:
-				if v2 == 0 {
-					return 0
-				}
-				return v / v2
-			default:
-				return 0
-			}
-		case float32:
-			switch v2 := b.(type) {
-			case float32:
-				if v2 == 0 {
-					return 0
-				}
-				return v / v2
-			default:
-				return 0
-			}
-		case float64:
-			switch v2 := b.(type) {
-			case float64:
-				if v2 == 0 {
-					return 0
-				}
-				return v / v2
-			default:
-				return 0
-			}
-		default:
-			return 0
-		}
-	},
-	"AND": func(a interface{}, b interface{}) interface{} {
-		return a.(bool) && b.(bool)
-	},
-	"OR": func(a interface{}, b interface{}) interface{} {
-		return a.(bool) || b.(bool)
-	},
+		return v1 + v2
+	}
+	return 0
 }
