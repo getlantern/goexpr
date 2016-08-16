@@ -44,15 +44,68 @@ func Init(dbFile string) error {
 	return nil
 }
 
-func CITY_STATE(ip goexpr.Expr) goexpr.Expr {
-	return &cityState{ip}
+func CITY(ip goexpr.Expr) goexpr.Expr {
+	return &city{ip}
 }
 
-type cityState struct {
+type city struct {
 	ip goexpr.Expr
 }
 
-func (e *cityState) Eval(params goexpr.Params) interface{} {
+func (e *city) Eval(params goexpr.Params) interface{} {
+	_ip := e.ip.Eval(params)
+	switch ip := _ip.(type) {
+	case string:
+		city := cityFor(ip)
+		if city == nil {
+			return nil
+		}
+		return city.City.Names["en"]
+	}
+	return nil
+}
+
+func (e *city) String() string {
+	return fmt.Sprintf("CITY(%v)", e.ip)
+}
+
+func SUBD(ip goexpr.Expr) goexpr.Expr {
+	return &subd{ip}
+}
+
+type subd struct {
+	ip goexpr.Expr
+}
+
+func (e *subd) Eval(params goexpr.Params) interface{} {
+	_ip := e.ip.Eval(params)
+	switch ip := _ip.(type) {
+	case string:
+		city := cityFor(ip)
+		if city == nil {
+			return nil
+		}
+		if len(city.Subdivisions) == 0 {
+			return nil
+		}
+		return city.Subdivisions[0].Names["en"]
+	}
+	return nil
+}
+
+func (e *subd) String() string {
+	return fmt.Sprintf("SUBD(%v)", e.ip)
+}
+
+func CITY_SUBD(ip goexpr.Expr) goexpr.Expr {
+	return &citySubd{ip}
+}
+
+type citySubd struct {
+	ip goexpr.Expr
+}
+
+func (e *citySubd) Eval(params goexpr.Params) interface{} {
 	_ip := e.ip.Eval(params)
 	switch ip := _ip.(type) {
 	case string:
@@ -69,8 +122,33 @@ func (e *cityState) Eval(params goexpr.Params) interface{} {
 	return nil
 }
 
-func (e *cityState) String() string {
-	return fmt.Sprintf("ISP(%v)", e.ip)
+func (e *citySubd) String() string {
+	return fmt.Sprintf("CITY_SUBD(%v)", e.ip)
+}
+
+func COUNTRY_CODE(ip goexpr.Expr) goexpr.Expr {
+	return &countryCode{ip}
+}
+
+type countryCode struct {
+	ip goexpr.Expr
+}
+
+func (e *countryCode) Eval(params goexpr.Params) interface{} {
+	_ip := e.ip.Eval(params)
+	switch ip := _ip.(type) {
+	case string:
+		city := cityFor(ip)
+		if city == nil {
+			return nil
+		}
+		return city.Country.IsoCode
+	}
+	return nil
+}
+
+func (e *countryCode) String() string {
+	return fmt.Sprintf("COUNTRY_CODE(%v)", e.ip)
 }
 
 func cityFor(ip string) *geoip2.City {
