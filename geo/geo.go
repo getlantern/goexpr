@@ -69,15 +69,15 @@ func (e *city) String() string {
 	return fmt.Sprintf("CITY(%v)", e.ip)
 }
 
-func SUBD(ip goexpr.Expr) goexpr.Expr {
-	return &subd{ip}
+func REGION(ip goexpr.Expr) goexpr.Expr {
+	return &region{ip}
 }
 
-type subd struct {
+type region struct {
 	ip goexpr.Expr
 }
 
-func (e *subd) Eval(params goexpr.Params) interface{} {
+func (e *region) Eval(params goexpr.Params) interface{} {
 	_ip := e.ip.Eval(params)
 	switch ip := _ip.(type) {
 	case string:
@@ -93,19 +93,19 @@ func (e *subd) Eval(params goexpr.Params) interface{} {
 	return nil
 }
 
-func (e *subd) String() string {
-	return fmt.Sprintf("SUBD(%v)", e.ip)
+func (e *region) String() string {
+	return fmt.Sprintf("REGION(%v)", e.ip)
 }
 
-func CITY_SUBD(ip goexpr.Expr) goexpr.Expr {
-	return &citySubd{ip}
+func REGION_CITY(ip goexpr.Expr) goexpr.Expr {
+	return &regionCity{ip}
 }
 
-type citySubd struct {
+type regionCity struct {
 	ip goexpr.Expr
 }
 
-func (e *citySubd) Eval(params goexpr.Params) interface{} {
+func (e *regionCity) Eval(params goexpr.Params) interface{} {
 	_ip := e.ip.Eval(params)
 	switch ip := _ip.(type) {
 	case string:
@@ -115,15 +115,15 @@ func (e *citySubd) Eval(params goexpr.Params) interface{} {
 		}
 		cityName := city.City.Names["en"]
 		if len(city.Subdivisions) > 0 {
-			return cityName + ", " + city.Subdivisions[0].Names["en"]
+			return city.Subdivisions[0].Names["en"] + ", " + cityName
 		}
 		return cityName
 	}
 	return nil
 }
 
-func (e *citySubd) String() string {
-	return fmt.Sprintf("CITY_SUBD(%v)", e.ip)
+func (e *regionCity) String() string {
+	return fmt.Sprintf("REGION_CITY(%v)", e.ip)
 }
 
 func COUNTRY_CODE(ip goexpr.Expr) goexpr.Expr {
