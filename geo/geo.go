@@ -1,3 +1,4 @@
+// Package geo provides geolocation functions.
 package geo
 
 import (
@@ -44,6 +45,7 @@ func Init(dbFile string) error {
 	return nil
 }
 
+// CITY returns the city name for the IP, e.g. "Austin"
 func CITY(ip goexpr.Expr) goexpr.Expr {
 	return &city{ip}
 }
@@ -69,6 +71,7 @@ func (e *city) String() string {
 	return fmt.Sprintf("CITY(%v)", e.ip)
 }
 
+// REGION returns the region name for the IP, e.g. "Texas"
 func REGION(ip goexpr.Expr) goexpr.Expr {
 	return &region{ip}
 }
@@ -97,6 +100,7 @@ func (e *region) String() string {
 	return fmt.Sprintf("REGION(%v)", e.ip)
 }
 
+// REGION_CITY returns the region and city name for the IP, e.g. "Texas, Austin"
 func REGION_CITY(ip goexpr.Expr) goexpr.Expr {
 	return &regionCity{ip}
 }
@@ -126,6 +130,7 @@ func (e *regionCity) String() string {
 	return fmt.Sprintf("REGION_CITY(%v)", e.ip)
 }
 
+// COUNTRY_CODE returns the 2 digit ISO country code for the ip, e.g. "US"
 func COUNTRY_CODE(ip goexpr.Expr) goexpr.Expr {
 	return &countryCode{ip}
 }
