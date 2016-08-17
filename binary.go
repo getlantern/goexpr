@@ -130,6 +130,8 @@ var ops = map[string]op{
 			return a == b
 		},
 		st: func(a string, b string) interface{} {
+			a = strings.ToLower(a)
+			b = strings.ToLower(b)
 			lb := len(b)
 			last := lb - 1
 			endWildcard := b[last] == '%'
