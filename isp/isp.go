@@ -94,7 +94,7 @@ func (e *isp) Eval(params goexpr.Params) interface{} {
 		if !found {
 			return nil
 		}
-		return ent.name
+		return strings.TrimSpace(ent.name)
 	}
 	return nil
 }
