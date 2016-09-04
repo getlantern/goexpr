@@ -25,7 +25,7 @@ func (e *MutableExpr) Eval(params Params) interface{} {
 
 func (e *MutableExpr) String() string {
 	if e.wrapped == nil {
-		return "Mutable(<unset>)"
+		return "MUTABLE(<unset>)"
 	}
-	return fmt.Sprintf("Mutable(%v)", e.wrapped.String())
+	return fmt.Sprintf("MUTABLE(%v)", e.wrapped.String())
 }

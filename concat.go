@@ -33,7 +33,7 @@ func (e *concat) String() string {
 	buf.WriteString("CONCAT(")
 	buf.WriteString(e.delim.String())
 	for _, wrapped := range e.wrapped {
-		buf.WriteString(",")
+		buf.WriteString(", ")
 		fmt.Fprint(buf, wrapped.String())
 	}
 	buf.WriteString(")")

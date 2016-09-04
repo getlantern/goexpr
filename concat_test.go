@@ -17,7 +17,7 @@ func TestConcat(t *testing.T) {
 	assert.Equal(t, "a|b|c", Concat(pipe, a, b, c).Eval(nil))
 
 	assert.Equal(t, "CONCAT(|)", Concat(pipe).String())
-	assert.Equal(t, "CONCAT(|,a)", Concat(pipe, a).String())
-	assert.Equal(t, "CONCAT(|,a,b)", Concat(pipe, a, b).String())
-	assert.Equal(t, "CONCAT(|,a,b,c)", Concat(pipe, a, b, c).String())
+	assert.Equal(t, "CONCAT(|, a)", Concat(pipe, a).String())
+	assert.Equal(t, "CONCAT(|, a, b)", Concat(pipe, a, b).String())
+	assert.Equal(t, "CONCAT(|, a, b, c)", Concat(pipe, a, b, c).String())
 }
