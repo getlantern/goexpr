@@ -27,10 +27,12 @@ func (e *in) Eval(params Params) interface{} {
 
 func (e *in) String() string {
 	buf := &bytes.Buffer{}
-	buf.WriteString("IN(")
 	buf.WriteString(e.val.String())
-	for _, candidate := range e.candidates {
-		buf.WriteString(", ")
+	buf.WriteString(" IN(")
+	for i, candidate := range e.candidates {
+		if i > 0 {
+			buf.WriteString(", ")
+		}
 		fmt.Fprint(buf, candidate.String())
 	}
 	buf.WriteString(")")
