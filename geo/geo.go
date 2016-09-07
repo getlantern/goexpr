@@ -199,22 +199,24 @@ func keepDbCurrent(dbFile string, dbDate time.Time) {
 		headResp, err := http.Head(dbURL)
 		if err != nil {
 			log.Errorf("Unable to request modified of %s: %s", dbURL, err)
+			continue
 		}
 		lm, err := lastModified(headResp)
 		if err != nil {
 			log.Errorf("Unable to parse modified date for %s: %s", dbURL, err)
+			continue
 		}
 		if lm.After(dbDate) {
 			log.Debug("Updating database from web")
 			_db, _dbDate, err := readDbFromWeb(dbFile)
 			if err != nil {
 				log.Errorf("Unable to update database from web: %s", err)
-			} else {
-				dbDate = _dbDate
-				dbMutex.Lock()
-				db = _db
-				dbMutex.Unlock()
+				continue
 			}
+			dbDate = _dbDate
+			dbMutex.Lock()
+			db = _db
+			dbMutex.Unlock()
 		}
 	}
 }
