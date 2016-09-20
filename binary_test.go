@@ -253,10 +253,14 @@ func TestANDOR(t *testing.T) {
 		scenario{"AND", false, false, false},
 		scenario{"AND", false, true, false},
 		scenario{"AND", true, false, false},
+		scenario{"AND", 5, true, false},
+		scenario{"AND", true, 5, false},
 		scenario{"OR", true, true, true},
 		scenario{"OR", false, false, false},
 		scenario{"OR", false, true, true},
 		scenario{"OR", true, false, true},
+		scenario{"OR", 5, true, true},
+		scenario{"OR", true, 5, true},
 	}
 
 	for _, scenario := range scenarios {

@@ -15,6 +15,8 @@ func Binary(operator string, left Expr, right Expr) (Expr, error) {
 	// Normalize equals and not equals
 	needsNot := false
 	switch operator {
+	case "AND", "OR":
+		return Boolean(operator, left, right)
 	case "=":
 		operator = "=="
 	case "<>":
@@ -286,54 +288,6 @@ var ops = map[string]op{
 		},
 		ts: func(a time.Time, b time.Time) interface{} {
 			return !a.Before(b)
-		},
-		dflt: false,
-	},
-	"AND": op{
-		nl: func(a interface{}, b interface{}) interface{} {
-			return false
-		},
-		bl: func(a bool, b bool) interface{} {
-			return a && b
-		},
-		uin: func(a uint64, b uint64) interface{} {
-			return false
-		},
-		sin: func(a int64, b int64) interface{} {
-			return false
-		},
-		fl: func(a float64, b float64) interface{} {
-			return false
-		},
-		st: func(a string, b string) interface{} {
-			return false
-		},
-		ts: func(a time.Time, b time.Time) interface{} {
-			return false
-		},
-		dflt: false,
-	},
-	"OR": op{
-		nl: func(a interface{}, b interface{}) interface{} {
-			return false
-		},
-		bl: func(a bool, b bool) interface{} {
-			return a || b
-		},
-		uin: func(a uint64, b uint64) interface{} {
-			return false
-		},
-		sin: func(a int64, b int64) interface{} {
-			return false
-		},
-		fl: func(a float64, b float64) interface{} {
-			return false
-		},
-		st: func(a string, b string) interface{} {
-			return false
-		},
-		ts: func(a time.Time, b time.Time) interface{} {
-			return false
 		},
 		dflt: false,
 	},
