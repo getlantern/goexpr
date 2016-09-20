@@ -7,12 +7,11 @@ import (
 )
 
 func TestRand(t *testing.T) {
-	rand := Rand(Param("a"))
-	params := MapParams{"a": 0.5} // 50%
+	rand := Rand()
 	countOfTrue := float64(0)
 	iters := 1000000
 	for i := 0; i < iters; i++ {
-		if rand.Eval(params).(bool) {
+		if rand.Eval(nil).(float64) < 0.5 {
 			countOfTrue++
 		}
 	}
