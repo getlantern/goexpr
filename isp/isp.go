@@ -9,14 +9,23 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync/atomic"
 
 	"github.com/Workiva/go-datastructures/trie/yfast"
 	"github.com/getlantern/goexpr"
 )
 
 var (
-	entries = yfast.New(uint32(0)) // 32 bit universe size for 32 bit IPv4
+	entries = &atomic.Value{}
 )
+
+func init() {
+	entries.Store(newTree())
+}
+
+func newTree() *yfast.YFastTrie {
+	return yfast.New(uint32(0)) // 32 bit universe size for 32 bit IPv4
+}
 
 type entry struct {
 	start uint64
@@ -72,7 +81,9 @@ func Init(datafile string) error {
 		}
 		newEntries = append(newEntries, entry)
 	}
-	entries.Insert(newEntries...)
+	tree := newTree()
+	tree.Insert(newEntries...)
+	entries.Store(tree)
 
 	return nil
 }
@@ -134,7 +145,8 @@ func lookup(ip string) (*entry, bool) {
 	if i == -1 {
 		return nil, false
 	}
-	_e := entries.Predecessor(uint64(i))
+	tree := entries.Load().(*yfast.YFastTrie)
+	_e := tree.Predecessor(uint64(i))
 	if _e == nil {
 		return nil, false
 	}
