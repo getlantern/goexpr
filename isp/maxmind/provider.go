@@ -10,7 +10,7 @@ import (
 
 // NewProvider creates a new provider using the specified MaxMind GeoIP2 ISP
 // datafile.
-func NewProvider(datafile string) (isp.ISPProvider, error) {
+func NewProvider(datafile string) (isp.Provider, error) {
 	r, err := geoip2.Open(datafile)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to open datafile at %v: %v", datafile, err)

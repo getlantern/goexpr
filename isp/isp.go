@@ -12,8 +12,8 @@ var (
 	provider atomic.Value
 )
 
-// ISPProvider implements the actual looking up of ISP and ASN information.
-type ISPProvider interface {
+// Provider implements the actual looking up of ISP and ASN information.
+type Provider interface {
 	// ISP looks up the name of the Internet Service Provider corresponding to the
 	// given ip.
 	ISP(ip string) (isp string, found bool)
@@ -23,12 +23,12 @@ type ISPProvider interface {
 }
 
 // SetProvider sets the ISP data provider
-func SetProvider(prov ISPProvider) {
+func SetProvider(prov Provider) {
 	provider.Store(prov)
 }
 
-func getProvider() ISPProvider {
-	return provider.Load().(ISPProvider)
+func getProvider() Provider {
+	return provider.Load().(Provider)
 }
 
 // ISP returns the ISP name for a given IPv4 address

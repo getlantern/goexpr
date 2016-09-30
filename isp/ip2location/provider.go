@@ -15,7 +15,7 @@ import (
 
 // NewProvider creates a new provider using the specified datafile. This is a
 // file from https://lite.ip2location.com/database/ip-asn.
-func NewProvider(datafile string) (isp.ISPProvider, error) {
+func NewProvider(datafile string) (isp.Provider, error) {
 	prov := &provider{
 		yfast.New(uint32(0)), // 32 bit universe size for 32 bit IPv4
 	}
