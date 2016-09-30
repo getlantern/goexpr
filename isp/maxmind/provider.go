@@ -28,6 +28,14 @@ func (prov *provider) ISP(ip string) (string, bool) {
 	if !found {
 		return "", false
 	}
+	return isp.ISP, isp.ISP != ""
+}
+
+func (prov *provider) ORG(ip string) (string, bool) {
+	isp, found := prov.lookup(ip)
+	if !found {
+		return "", false
+	}
 	return isp.Organization, isp.Organization != ""
 }
 

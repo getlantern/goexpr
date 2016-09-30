@@ -46,6 +46,10 @@ func (prov *provider) ISP(ip string) (string, bool) {
 	return ent.name, true
 }
 
+func (prov *provider) ORG(ip string) (string, bool) {
+	return prov.ISP(ip)
+}
+
 func (prov *provider) ASN(ip string) (int, bool) {
 	ent, found := prov.lookup(ip)
 	if !found {

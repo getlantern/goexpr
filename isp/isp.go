@@ -18,6 +18,10 @@ type Provider interface {
 	// given ip.
 	ISP(ip string) (isp string, found bool)
 
+	// ORG looks up the name of the Organization corresponding to the given ip
+	// (may be different than ISP).
+	ORG(ip string) (org string, found bool)
+
 	// ASN looks up the Autonomous System Number corresponding to the given ip.
 	ASN(ip string) (asn int, found bool)
 }
@@ -33,44 +37,37 @@ func getProvider() Provider {
 
 // ISP returns the ISP name for a given IPv4 address
 func ISP(ip goexpr.Expr) goexpr.Expr {
-	return &isp{ip}
+	return &ispExpr{"ISP", ip, func(ip string) (interface{}, bool) {
+		return getProvider().ISP(ip)
+	}}
 }
 
-type isp struct {
-	ip goexpr.Expr
-}
-
-func (e *isp) Eval(params goexpr.Params) interface{} {
-	_ip := e.ip.Eval(params)
-	switch ip := _ip.(type) {
-	case string:
-		result, found := getProvider().ISP(ip)
-		if !found {
-			return nil
-		}
-		return result
-	}
-	return nil
-}
-
-func (e *isp) String() string {
-	return fmt.Sprintf("ISP(%v)", e.ip)
+// ORG returns the Organization name for a given IPv4 address (similar to ISP
+// but may have different data depending on provider used).
+func ORG(ip goexpr.Expr) goexpr.Expr {
+	return &ispExpr{"ORG", ip, func(ip string) (interface{}, bool) {
+		return getProvider().ORG(ip)
+	}}
 }
 
 // ASN returns the ASN number for a given IPv4 address as an int
 func ASN(ip goexpr.Expr) goexpr.Expr {
-	return &asn{ip}
+	return &ispExpr{"ASN", ip, func(ip string) (interface{}, bool) {
+		return getProvider().ASN(ip)
+	}}
 }
 
-type asn struct {
-	ip goexpr.Expr
+type ispExpr struct {
+	name string
+	ip   goexpr.Expr
+	fn   func(ip string) (interface{}, bool)
 }
 
-func (e *asn) Eval(params goexpr.Params) interface{} {
+func (e *ispExpr) Eval(params goexpr.Params) interface{} {
 	_ip := e.ip.Eval(params)
 	switch ip := _ip.(type) {
 	case string:
-		result, found := getProvider().ASN(ip)
+		result, found := e.fn(ip)
 		if !found {
 			return nil
 		}
@@ -79,6 +76,6 @@ func (e *asn) Eval(params goexpr.Params) interface{} {
 	return nil
 }
 
-func (e *asn) String() string {
-	return fmt.Sprintf("ASN(%v)", e.ip)
+func (e *ispExpr) String() string {
+	return fmt.Sprintf("%v(%v)", e.name, e.ip)
 }
