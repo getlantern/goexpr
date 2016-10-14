@@ -13,6 +13,7 @@ import (
 
 	"github.com/getlantern/goexpr"
 	"github.com/getlantern/golog"
+	"github.com/hashicorp/golang-lru"
 	geoip2 "github.com/oschwald/geoip2-golang"
 )
 
@@ -23,8 +24,9 @@ const (
 var (
 	log = golog.LoggerFor("goexpr")
 
-	db      *geoip2.Reader
-	dbMutex sync.RWMutex
+	db        *geoip2.Reader
+	cityCache *lru.Cache
+	dbMutex   sync.RWMutex
 )
 
 // Init initializes the Geolocation subsystem, storing the database file at the
@@ -39,6 +41,7 @@ func Init(dbFile string) error {
 		}
 	}
 	dbMutex.Lock()
+	cityCache, _ = lru.New(1000000)
 	db = _db
 	dbMutex.Unlock()
 	go keepDbCurrent(dbFile, dbDate)
@@ -157,19 +160,26 @@ func (e *countryCode) String() string {
 }
 
 func cityFor(ip string) *geoip2.City {
+	d, c := getDBAndCache()
+	_city, found := c.Get(ip)
+	if found {
+		return _city.(*geoip2.City)
+	}
 	parsedIP := net.ParseIP(ip)
-	city, err := getDB().City(parsedIP)
+	city, err := d.City(parsedIP)
+	cityCache.Add(ip, city)
 	if err != nil {
 		return nil
 	}
 	return city
 }
 
-func getDB() *geoip2.Reader {
+func getDBAndCache() (*geoip2.Reader, *lru.Cache) {
 	dbMutex.RLock()
 	_db := db
+	_cache := cityCache
 	dbMutex.RUnlock()
-	return _db
+	return _db, _cache
 }
 
 // readDbFromFile reads the MaxMind database and timestamp from a file
@@ -216,6 +226,7 @@ func keepDbCurrent(dbFile string, dbDate time.Time) {
 			dbDate = _dbDate
 			dbMutex.Lock()
 			db = _db
+			cityCache.Purge()
 			dbMutex.Unlock()
 		}
 	}
