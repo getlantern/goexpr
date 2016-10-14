@@ -28,7 +28,7 @@ type Provider interface {
 
 // SetProvider sets the ISP data provider
 func SetProvider(prov Provider) {
-	provider.Store(prov)
+	provider.Store(withCaching(prov, 1000000))
 }
 
 func getProvider() Provider {
