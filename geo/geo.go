@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	dbURL = "https://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz"
+	dbURL = "https://s3.amazonaws.com/lantern/GeoLite2-City.mmdb.gz"
 )
 
 var (
@@ -236,20 +236,20 @@ func keepDbCurrent(dbFile string, dbDate time.Time) {
 func readDbFromWeb(dbFile string) (*geoip2.Reader, time.Time, error) {
 	dbResp, err := http.Get(dbURL)
 	if err != nil {
-		return nil, time.Time{}, fmt.Errorf("Unable to get database from %s: %s", dbURL, err)
+		return nil, time.Time{}, fmt.Errorf("Unable to get database from %v: %v", dbURL, err)
 	}
 	gzipDbData, err := gzip.NewReader(dbResp.Body)
 	if err != nil {
-		return nil, time.Time{}, fmt.Errorf("Unable to open gzip reader on response body%s", err)
+		return nil, time.Time{}, fmt.Errorf("Unable to open gzip reader on response body: %v", err)
 	}
 	defer gzipDbData.Close()
 	dbData, err := ioutil.ReadAll(gzipDbData)
 	if err != nil {
-		return nil, time.Time{}, fmt.Errorf("Unable to fetch database from HTTP response: %s", err)
+		return nil, time.Time{}, fmt.Errorf("Unable to fetch database from HTTP response: %v", err)
 	}
 	dbDate, err := lastModified(dbResp)
 	if err != nil {
-		return nil, time.Time{}, fmt.Errorf("Unable to parse Last-Modified header %s: %s", dbDate, err)
+		return nil, time.Time{}, fmt.Errorf("Unable to parse Last-Modified header %v: %v", dbDate, err)
 	}
 	err = ioutil.WriteFile(dbFile, dbData, 0644)
 	if err != nil {
