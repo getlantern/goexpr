@@ -14,6 +14,8 @@ type Params interface {
 type Expr interface {
 	Eval(Params) interface{}
 
+	WalkLists(cb func(List))
+
 	String() string
 }
 
@@ -27,6 +29,9 @@ type param struct {
 
 func (e *param) Eval(params Params) interface{} {
 	return params.Get(e.name)
+}
+
+func (e *param) WalkLists(cb func(List)) {
 }
 
 func (e *param) String() string {
@@ -45,6 +50,9 @@ func (e *constant) Eval(params Params) interface{} {
 	return e.val
 }
 
+func (e *constant) WalkLists(cb func(List)) {
+}
+
 func (e *constant) String() string {
 	return fmt.Sprint(e.val)
 }
@@ -59,6 +67,9 @@ type notExpr struct {
 
 func (e *notExpr) Eval(params Params) interface{} {
 	return !e.wrapped.Eval(params).(bool)
+}
+
+func (e *notExpr) WalkLists(cb func(List)) {
 }
 
 func (e *notExpr) String() string {

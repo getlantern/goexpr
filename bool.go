@@ -41,10 +41,15 @@ type booleanExpr struct {
 	right          Expr
 }
 
-func (e *booleanExpr) String() string {
-	return fmt.Sprintf("(%v %v %v)", e.left, e.operatorString, e.right)
-}
-
 func (e *booleanExpr) Eval(params Params) interface{} {
 	return e.operator(e.left, e.right, params)
+}
+
+func (e *booleanExpr) WalkLists(cb func(List)) {
+	e.left.WalkLists(cb)
+	e.right.WalkLists(cb)
+}
+
+func (e *booleanExpr) String() string {
+	return fmt.Sprintf("(%v %v %v)", e.left, e.operatorString, e.right)
 }

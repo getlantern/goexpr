@@ -28,6 +28,13 @@ func (e *concat) Eval(params Params) interface{} {
 	return buf.String()
 }
 
+func (e *concat) WalkLists(cb func(List)) {
+	e.delim.WalkLists(cb)
+	for _, wrapped := range e.wrapped {
+		wrapped.WalkLists(cb)
+	}
+}
+
 func (e *concat) String() string {
 	buf := &bytes.Buffer{}
 	buf.WriteString("CONCAT(")

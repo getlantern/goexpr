@@ -16,6 +16,9 @@ func (e *randExpr) Eval(params Params) interface{} {
 	return rand.Float64()
 }
 
+func (e *randExpr) WalkLists(cb func(List)) {
+}
+
 func (e *randExpr) String() string {
 	return "RAND"
 }

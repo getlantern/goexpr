@@ -52,12 +52,17 @@ type binaryExpr struct {
 	right          Expr
 }
 
-func (e *binaryExpr) String() string {
-	return fmt.Sprintf("(%v %v %v)", e.left, e.operatorString, e.right)
-}
-
 func (e *binaryExpr) Eval(params Params) interface{} {
 	return e.operator(e.left.Eval(params), e.right.Eval(params))
+}
+
+func (e *binaryExpr) WalkLists(cb func(List)) {
+	e.left.WalkLists(cb)
+	e.right.WalkLists(cb)
+}
+
+func (e *binaryExpr) String() string {
+	return fmt.Sprintf("(%v %v %v)", e.left, e.operatorString, e.right)
 }
 
 func buildOpFN(o op) opFN {

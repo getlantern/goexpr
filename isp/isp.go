@@ -76,6 +76,10 @@ func (e *ispExpr) Eval(params goexpr.Params) interface{} {
 	return nil
 }
 
+func (e *ispExpr) WalkLists(cb func(goexpr.List)) {
+	e.ip.WalkLists(cb)
+}
+
 func (e *ispExpr) String() string {
 	return fmt.Sprintf("%v(%v)", e.name, e.ip)
 }

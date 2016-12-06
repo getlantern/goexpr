@@ -70,6 +70,10 @@ func (e *city) Eval(params goexpr.Params) interface{} {
 	return nil
 }
 
+func (e *city) WalkLists(cb func(goexpr.List)) {
+	e.ip.WalkLists(cb)
+}
+
 func (e *city) String() string {
 	return fmt.Sprintf("CITY(%v)", e.ip)
 }
@@ -97,6 +101,10 @@ func (e *region) Eval(params goexpr.Params) interface{} {
 		return city.Subdivisions[0].Names["en"]
 	}
 	return nil
+}
+
+func (e *region) WalkLists(cb func(goexpr.List)) {
+	e.ip.WalkLists(cb)
 }
 
 func (e *region) String() string {
@@ -129,6 +137,10 @@ func (e *regionCity) Eval(params goexpr.Params) interface{} {
 	return nil
 }
 
+func (e *regionCity) WalkLists(cb func(goexpr.List)) {
+	e.WalkLists(cb)
+}
+
 func (e *regionCity) String() string {
 	return fmt.Sprintf("REGION_CITY(%v)", e.ip)
 }
@@ -153,6 +165,10 @@ func (e *countryCode) Eval(params goexpr.Params) interface{} {
 		return city.Country.IsoCode
 	}
 	return nil
+}
+
+func (e *countryCode) WalkLists(cb func(goexpr.List)) {
+	e.ip.WalkLists(cb)
 }
 
 func (e *countryCode) String() string {

@@ -52,6 +52,11 @@ func (e *in) Eval(params Params) interface{} {
 	return false
 }
 
+func (e *in) WalkLists(cb func(List)) {
+	cb(e._candidates)
+	e.val.WalkLists(cb)
+}
+
 func (e *in) String() string {
 	return fmt.Sprintf("%v IN(%v)", e.val.String(), e._candidates)
 }
