@@ -52,6 +52,10 @@ func (e *in) Eval(params Params) interface{} {
 	return false
 }
 
+func (e *in) WalkOneToOneParams(cb func(string)) {
+	// this function is not one-to-one, stop
+}
+
 func (e *in) WalkLists(cb func(List)) {
 	cb(e._candidates)
 	e.val.WalkLists(cb)

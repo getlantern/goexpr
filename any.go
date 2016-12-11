@@ -24,6 +24,10 @@ func (e *any) Eval(params Params) interface{} {
 	return nil
 }
 
+func (e *any) WalkOneToOneParams(cb func(string)) {
+	// this function is not one-to-one, stop
+}
+
 func (e *any) WalkLists(cb func(List)) {
 	for _, e := range e.exprs {
 		e.WalkLists(cb)

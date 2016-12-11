@@ -50,6 +50,10 @@ func (e *booleanExpr) Eval(params Params) interface{} {
 	return e.operator(e.left, e.right, params)
 }
 
+func (e *booleanExpr) WalkOneToOneParams(cb func(string)) {
+	// this function is not one-to-one, stop
+}
+
 func (e *booleanExpr) WalkLists(cb func(List)) {
 	e.left.WalkLists(cb)
 	e.right.WalkLists(cb)

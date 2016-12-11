@@ -14,6 +14,11 @@ type Params interface {
 type Expr interface {
 	Eval(Params) interface{}
 
+	// WalkOneToOneParams supplies the callback with the names of any params whose
+	// values are transformed by this function on a one-to-one basis (i.e. every
+	// input value corresponds to one distinct output value).
+	WalkOneToOneParams(cb func(string))
+
 	WalkLists(cb func(List))
 
 	String() string
@@ -29,6 +34,10 @@ type param struct {
 
 func (e *param) Eval(params Params) interface{} {
 	return params.Get(e.name)
+}
+
+func (e *param) WalkOneToOneParams(cb func(string)) {
+	cb(e.name)
 }
 
 func (e *param) WalkLists(cb func(List)) {
@@ -50,6 +59,9 @@ func (e *constant) Eval(params Params) interface{} {
 	return e.val
 }
 
+func (e *constant) WalkOneToOneParams(cb func(string)) {
+}
+
 func (e *constant) WalkLists(cb func(List)) {
 }
 
@@ -69,7 +81,12 @@ func (e *notExpr) Eval(params Params) interface{} {
 	return !e.wrapped.Eval(params).(bool)
 }
 
+func (e *notExpr) WalkOneToOneParams(cb func(string)) {
+	e.wrapped.WalkOneToOneParams(cb)
+}
+
 func (e *notExpr) WalkLists(cb func(List)) {
+	e.wrapped.WalkLists(cb)
 }
 
 func (e *notExpr) String() string {

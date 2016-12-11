@@ -28,6 +28,13 @@ func (e *concat) Eval(params Params) interface{} {
 	return buf.String()
 }
 
+func (e *concat) WalkOneToOneParams(cb func(string)) {
+	e.delim.WalkOneToOneParams(cb)
+	for _, wrapped := range e.wrapped {
+		wrapped.WalkOneToOneParams(cb)
+	}
+}
+
 func (e *concat) WalkLists(cb func(List)) {
 	e.delim.WalkLists(cb)
 	for _, wrapped := range e.wrapped {

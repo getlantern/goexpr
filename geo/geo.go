@@ -70,6 +70,10 @@ func (e *city) Eval(params goexpr.Params) interface{} {
 	return nil
 }
 
+func (e *city) WalkOneToOneParams(cb func(string)) {
+	// this function is not one-to-one, stop
+}
+
 func (e *city) WalkLists(cb func(goexpr.List)) {
 	e.ip.WalkLists(cb)
 }
@@ -101,6 +105,10 @@ func (e *region) Eval(params goexpr.Params) interface{} {
 		return city.Subdivisions[0].Names["en"]
 	}
 	return nil
+}
+
+func (e *region) WalkOneToOneParams(cb func(string)) {
+	// this function is not one-to-one, stop
 }
 
 func (e *region) WalkLists(cb func(goexpr.List)) {
@@ -137,6 +145,10 @@ func (e *regionCity) Eval(params goexpr.Params) interface{} {
 	return nil
 }
 
+func (e *regionCity) WalkOneToOneParams(cb func(string)) {
+	// this function is not one-to-one, stop
+}
+
 func (e *regionCity) WalkLists(cb func(goexpr.List)) {
 	e.WalkLists(cb)
 }
@@ -165,6 +177,10 @@ func (e *countryCode) Eval(params goexpr.Params) interface{} {
 		return city.Country.IsoCode
 	}
 	return nil
+}
+
+func (e *countryCode) WalkOneToOneParams(cb func(string)) {
+	// this function is not one-to-one, stop
 }
 
 func (e *countryCode) WalkLists(cb func(goexpr.List)) {
