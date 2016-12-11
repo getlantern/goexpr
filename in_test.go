@@ -6,7 +6,8 @@ import (
 )
 
 func TestIn(t *testing.T) {
-	e1 := In(Constant(5), ArrayList{Constant(1), Constant(3), Constant(6)})
+	l1 := ArrayList{Constant(1), Constant(3), Constant(6)}
+	e1 := In(Constant(5), l1)
 	e2 := In(Constant(5), ArrayList{Constant(1), Constant(3), Constant(5), Constant(6)})
 	assert.Equal(t, false, e1.Eval(nil))
 	assert.Equal(t, true, e2.Eval(nil))
@@ -17,5 +18,5 @@ func TestIn(t *testing.T) {
 		lists = append(lists, list)
 	})
 	assert.Len(t, lists, 1)
-	assert.EqualValues(t, ArrayList{Constant(1), Constant(3), Constant(6)}, lists[0])
+	assert.EqualValues(t, l1, lists[0])
 }

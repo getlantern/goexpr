@@ -4,6 +4,8 @@ import (
 	"fmt"
 )
 
+// Boolean accepts the operators AND, OR and returns a short-circuiting
+// expression that evaluates left first and right second.
 func Boolean(operator string, left Expr, right Expr) (Expr, error) {
 	var bfn boolFN
 	switch operator {
@@ -30,6 +32,9 @@ func and(a Expr, b Expr, params Params) bool {
 
 func or(a Expr, b Expr, params Params) bool {
 	aVal, aok := a.Eval(params).(bool)
+	if aok && aVal {
+		return true
+	}
 	bVal, bok := b.Eval(params).(bool)
 	return (aok && aVal) || (bok && bVal)
 }
