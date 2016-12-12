@@ -51,19 +51,19 @@ func warmCaches() {
 	}
 }
 
-func HMGet(hash goexpr.Expr, key goexpr.Expr) goexpr.Expr {
-	return &hmget{
+func HGet(hash goexpr.Expr, key goexpr.Expr) goexpr.Expr {
+	return &hget{
 		hash: hash,
 		key:  key,
 	}
 }
 
-type hmget struct {
+type hget struct {
 	hash goexpr.Expr
 	key  goexpr.Expr
 }
 
-func (e *hmget) Eval(params goexpr.Params) interface{} {
+func (e *hget) Eval(params goexpr.Params) interface{} {
 	_hash := e.hash.Eval(params)
 	if _hash == nil {
 		return nil
@@ -96,14 +96,14 @@ func (e *hmget) Eval(params goexpr.Params) interface{} {
 	return value
 }
 
-func (e *hmget) WalkOneToOneParams(cb func(string)) {
+func (e *hget) WalkOneToOneParams(cb func(string)) {
 	// this function is not one-to-one, stop
 }
 
-func (e *hmget) WalkLists(cb func(goexpr.List)) {
+func (e *hget) WalkLists(cb func(goexpr.List)) {
 	e.key.WalkLists(cb)
 }
 
-func (e *hmget) String() string {
-	return fmt.Sprintf("HMGET(%v,%v)", e.hash, e.key)
+func (e *hget) String() string {
+	return fmt.Sprintf("HGET(%v,%v)", e.hash, e.key)
 }
