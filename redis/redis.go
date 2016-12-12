@@ -5,7 +5,7 @@ import (
 	"github.com/getlantern/goexpr"
 	"github.com/getlantern/golog"
 	"github.com/hashicorp/golang-lru"
-	"gopkg.in/redis.v3"
+	"gopkg.in/redis.v5"
 	"sync"
 	"time"
 )
@@ -35,7 +35,7 @@ func warmCaches() {
 		}
 		cacheMx.Unlock()
 		for hash, cache := range cachesCopy {
-			names, err := redisClient.HGetAllMap(hash).Result()
+			names, err := redisClient.HGetAll(hash).Result()
 			if err != nil {
 				log.Errorf("Unable to load hash %v from Redis: %v", hash, err)
 			} else {
