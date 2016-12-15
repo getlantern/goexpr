@@ -45,7 +45,7 @@ func (e *in) Eval(params Params) interface{} {
 	}
 	for _, candidate := range e.candidates {
 		c := candidate.Eval(params)
-		if c == v {
+		if doEq(c, v) {
 			return true
 		}
 	}
