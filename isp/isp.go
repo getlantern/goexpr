@@ -76,6 +76,10 @@ func (e *ispExpr) Eval(params goexpr.Params) interface{} {
 	return nil
 }
 
+func (e *ispExpr) WalkParams(cb func(string)) {
+	e.ip.WalkParams(cb)
+}
+
 func (e *ispExpr) WalkOneToOneParams(cb func(string)) {
 	// this function is not one-to-one, stop
 }

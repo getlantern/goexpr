@@ -96,6 +96,11 @@ func (e *hget) Eval(params goexpr.Params) interface{} {
 	return value
 }
 
+func (e *hget) WalkParams(cb func(string)) {
+	e.hash.WalkParams(cb)
+	e.key.WalkParams(cb)
+}
+
 func (e *hget) WalkOneToOneParams(cb func(string)) {
 	// this function is not one-to-one, stop
 }

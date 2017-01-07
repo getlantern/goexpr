@@ -50,6 +50,11 @@ func (e *booleanExpr) Eval(params Params) interface{} {
 	return e.operator(e.left, e.right, params)
 }
 
+func (e *booleanExpr) WalkParams(cb func(string)) {
+	e.left.WalkParams(cb)
+	e.right.WalkParams(cb)
+}
+
 func (e *booleanExpr) WalkOneToOneParams(cb func(string)) {
 	// this function is not one-to-one, stop
 }

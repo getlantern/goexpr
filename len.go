@@ -27,6 +27,10 @@ func (e *length) Eval(params Params) interface{} {
 	}
 }
 
+func (e *length) WalkParams(cb func(string)) {
+	e.source.WalkParams(cb)
+}
+
 func (e *length) WalkOneToOneParams(cb func(string)) {
 	e.source.WalkOneToOneParams(cb)
 }

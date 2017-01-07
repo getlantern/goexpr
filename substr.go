@@ -34,6 +34,12 @@ func (e *substr) Eval(params Params) interface{} {
 	return result
 }
 
+func (e *substr) WalkParams(cb func(string)) {
+	e.source.WalkParams(cb)
+	e.from.WalkParams(cb)
+	e.length.WalkParams(cb)
+}
+
 func (e *substr) WalkOneToOneParams(cb func(string)) {
 	// this function is not one-to-one, stop
 }

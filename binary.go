@@ -56,6 +56,11 @@ func (e *binaryExpr) Eval(params Params) interface{} {
 	return e.operator(e.left.Eval(params), e.right.Eval(params))
 }
 
+func (e *binaryExpr) WalkParams(cb func(string)) {
+	e.left.WalkParams(cb)
+	e.right.WalkParams(cb)
+}
+
 func (e *binaryExpr) WalkOneToOneParams(cb func(string)) {
 	// this function is not one-to-one, stop
 }
