@@ -29,10 +29,7 @@ func (e *concat) Eval(params Params) interface{} {
 }
 
 func (e *concat) WalkOneToOneParams(cb func(string)) {
-	e.delim.WalkOneToOneParams(cb)
-	for _, wrapped := range e.wrapped {
-		wrapped.WalkOneToOneParams(cb)
-	}
+	// this function is not one-to-one, stop
 }
 
 func (e *concat) WalkLists(cb func(List)) {
