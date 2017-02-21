@@ -31,6 +31,12 @@ func (e *split) Eval(params Params) interface{} {
 	return parts[idx]
 }
 
+func (e *split) WalkParams(cb func(string)) {
+	e.source.WalkParams(cb)
+	e.delim.WalkParams(cb)
+	e.idx.WalkParams(cb)
+}
+
 func (e *split) WalkOneToOneParams(cb func(string)) {
 	// this function is not one-to-one, stop
 }

@@ -16,6 +16,9 @@ func (e *randExpr) Eval(params Params) interface{} {
 	return rand.Float64()
 }
 
+func (e *randExpr) WalkParams(cb func(string)) {
+}
+
 func (e *randExpr) WalkOneToOneParams(cb func(string)) {
 	// this function is not one-to-one, stop
 }
