@@ -65,3 +65,16 @@ func (c *cachingProvider) ASN(ip string) (asn int, found bool) {
 	}
 	return
 }
+
+func (c *cachingProvider) ASName(ip string) (asnName string, found bool) {
+	_asnName, _found := c.asnCache.Get(ip)
+	if !_found {
+		_asnName, _found = c.Provider.ASName(ip)
+		c.asnCache.Add(ip, _asnName)
+	}
+	found = _asnName != ""
+	if found {
+		asnName = _asnName.(string)
+	}
+	return
+}

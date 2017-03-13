@@ -58,6 +58,10 @@ func (prov *provider) ASN(ip string) (int, bool) {
 	return ent.asn, true
 }
 
+func (prov *provider) ASName(ip string) (string, bool) {
+	return prov.ISP(ip)
+}
+
 func (prov *provider) init(datafile string) error {
 	file, err := os.Open(datafile)
 	if err != nil {

@@ -47,6 +47,14 @@ func (prov *provider) ASN(ip string) (int, bool) {
 	return int(isp.AutonomousSystemNumber), isp.AutonomousSystemNumber != 0
 }
 
+func (prov *provider) ASName(ip string) (string, bool) {
+	isp, found := prov.lookup(ip)
+	if !found {
+		return "", false
+	}
+	return isp.AutonomousSystemOrganization, isp.AutonomousSystemOrganization != ""
+}
+
 func (prov *provider) lookup(ip string) (*geoip2.ISP, bool) {
 	isp, err := prov.r.ISP(net.ParseIP(ip))
 	if err != nil {

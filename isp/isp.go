@@ -24,6 +24,9 @@ type Provider interface {
 
 	// ASN looks up the Autonomous System Number corresponding to the given ip.
 	ASN(ip string) (asn int, found bool)
+
+	// ASName looks up the Autonomous System Name corresponding to the given ip.
+	ASName(ip string) (asnName string, found bool)
 }
 
 // SetProvider sets the ISP data provider
@@ -54,6 +57,13 @@ func ORG(ip goexpr.Expr) goexpr.Expr {
 func ASN(ip goexpr.Expr) goexpr.Expr {
 	return &ispExpr{"ASN", ip, func(ip string) (interface{}, bool) {
 		return getProvider().ASN(ip)
+	}}
+}
+
+// ASName returns the ASN name for a given IPv4 address
+func ASName(ip goexpr.Expr) goexpr.Expr {
+	return &ispExpr{"ASNAME", ip, func(ip string) (interface{}, bool) {
+		return getProvider().ASName(ip)
 	}}
 }
 
