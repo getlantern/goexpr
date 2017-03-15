@@ -8,22 +8,25 @@ func withCaching(prov Provider, cacheSize int) Provider {
 	c1, _ := lru.New(cacheSize)
 	c2, _ := lru.New(cacheSize)
 	c3, _ := lru.New(cacheSize)
+	c4, _ := lru.New(cacheSize)
 
 	caching := &cachingProvider{
-		Provider: prov,
-		ispCache: c1,
-		orgCache: c2,
-		asnCache: c3,
+		Provider:    prov,
+		ispCache:    c1,
+		orgCache:    c2,
+		asnCache:    c3,
+		asnameCache: c4,
 	}
 
 	return caching
 }
 
 type cachingProvider struct {
-	Provider Provider
-	ispCache *lru.Cache
-	orgCache *lru.Cache
-	asnCache *lru.Cache
+	Provider    Provider
+	ispCache    *lru.Cache
+	orgCache    *lru.Cache
+	asnCache    *lru.Cache
+	asnameCache *lru.Cache
 }
 
 func (c *cachingProvider) ISP(ip string) (isp string, found bool) {
@@ -67,10 +70,10 @@ func (c *cachingProvider) ASN(ip string) (asn int, found bool) {
 }
 
 func (c *cachingProvider) ASName(ip string) (asnName string, found bool) {
-	_asnName, _found := c.asnCache.Get(ip)
+	_asnName, _found := c.asnameCache.Get(ip)
 	if !_found {
 		_asnName, _found = c.Provider.ASName(ip)
-		c.asnCache.Add(ip, _asnName)
+		c.asnameCache.Add(ip, _asnName)
 	}
 	found = _asnName != ""
 	if found {
