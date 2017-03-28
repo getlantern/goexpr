@@ -9,7 +9,7 @@ func TestSubstr(t *testing.T) {
 	source := Constant("abc")
 
 	apply := func(from int, to int) interface{} {
-		return Substr(source, Constant(from), Constant(to)).Eval(nil)
+		return msgpacked(t, Substr(source, Constant(from), Constant(to))).Eval(nil)
 	}
 
 	assert.Equal(t, "a", apply(0, 1))

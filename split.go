@@ -12,18 +12,18 @@ func Split(source Expr, delim Expr, idx Expr) Expr {
 }
 
 type split struct {
-	source Expr
-	delim  Expr
-	idx    Expr
+	Source Expr
+	Delim  Expr
+	Idx    Expr
 }
 
 func (e *split) Eval(params Params) interface{} {
-	source := e.source.Eval(params)
+	source := e.Source.Eval(params)
 	if source == nil {
 		return nil
 	}
-	delim := e.delim.Eval(params)
-	idx := e.idx.Eval(params).(int)
+	delim := e.Delim.Eval(params)
+	idx := e.Idx.Eval(params).(int)
 	parts := strings.Split(source.(string), delim.(string))
 	if idx >= len(parts) {
 		return nil
@@ -32,9 +32,9 @@ func (e *split) Eval(params Params) interface{} {
 }
 
 func (e *split) WalkParams(cb func(string)) {
-	e.source.WalkParams(cb)
-	e.delim.WalkParams(cb)
-	e.idx.WalkParams(cb)
+	e.Source.WalkParams(cb)
+	e.Delim.WalkParams(cb)
+	e.Idx.WalkParams(cb)
 }
 
 func (e *split) WalkOneToOneParams(cb func(string)) {
@@ -42,11 +42,11 @@ func (e *split) WalkOneToOneParams(cb func(string)) {
 }
 
 func (e *split) WalkLists(cb func(List)) {
-	e.source.WalkLists(cb)
-	e.delim.WalkLists(cb)
-	e.idx.WalkLists(cb)
+	e.Source.WalkLists(cb)
+	e.Delim.WalkLists(cb)
+	e.Idx.WalkLists(cb)
 }
 
 func (e *split) String() string {
-	return fmt.Sprintf("SPLIT(%v,%v,%v)", e.source.String(), e.delim.String(), e.idx.String())
+	return fmt.Sprintf("SPLIT(%v,%v,%v)", e.Source.String(), e.Delim.String(), e.Idx.String())
 }

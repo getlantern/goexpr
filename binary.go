@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
 var (
@@ -12,6 +14,7 @@ var (
 )
 
 func Binary(operator string, left Expr, right Expr) (Expr, error) {
+	op := operator
 	// Normalize equals and not equals
 	needsNot := false
 	switch operator {
@@ -19,13 +22,15 @@ func Binary(operator string, left Expr, right Expr) (Expr, error) {
 		return Boolean(operator, left, right)
 	case "=":
 		operator = "=="
+		op = operator
 	case "<>":
 		operator = "!="
+		op = operator
 	case "NOT LIKE":
-		operator = "LIKE"
+		op = "LIKE"
 		needsNot = true
 	}
-	o, found := ops[operator]
+	o, found := ops[op]
 	if !found {
 		return nil, fmt.Errorf("No op for %v", operator)
 	}
@@ -46,19 +51,19 @@ func not(operator opFN) opFN {
 type opFN func(a interface{}, b interface{}) interface{}
 
 type binaryExpr struct {
-	operatorString string
+	OperatorString string
 	operator       opFN
-	left           Expr
-	right          Expr
+	Left           Expr
+	Right          Expr
 }
 
 func (e *binaryExpr) Eval(params Params) interface{} {
-	return e.operator(e.left.Eval(params), e.right.Eval(params))
+	return e.operator(e.Left.Eval(params), e.Right.Eval(params))
 }
 
 func (e *binaryExpr) WalkParams(cb func(string)) {
-	e.left.WalkParams(cb)
-	e.right.WalkParams(cb)
+	e.Left.WalkParams(cb)
+	e.Right.WalkParams(cb)
 }
 
 func (e *binaryExpr) WalkOneToOneParams(cb func(string)) {
@@ -66,12 +71,33 @@ func (e *binaryExpr) WalkOneToOneParams(cb func(string)) {
 }
 
 func (e *binaryExpr) WalkLists(cb func(List)) {
-	e.left.WalkLists(cb)
-	e.right.WalkLists(cb)
+	e.Left.WalkLists(cb)
+	e.Right.WalkLists(cb)
 }
 
 func (e *binaryExpr) String() string {
-	return fmt.Sprintf("(%v %v %v)", e.left, e.operatorString, e.right)
+	return fmt.Sprintf("(%v %v %v)", e.Left, e.OperatorString, e.Right)
+}
+
+func (e *binaryExpr) DecodeMsgpack(dec *msgpack.Decoder) error {
+	m := make(map[string]interface{})
+	err := dec.Decode(&m)
+	if err != nil {
+		return err
+	}
+	_e2, err := Binary(m["OperatorString"].(string), m["Left"].(Expr), m["Right"].(Expr))
+	if err != nil {
+		return err
+	}
+	if _e2 == nil {
+		return fmt.Errorf("Unknown binary expression %v", m["OperatorString"])
+	}
+	e2 := _e2.(*binaryExpr)
+	e.OperatorString = e2.OperatorString
+	e.operator = e2.operator
+	e.Left = e2.Left
+	e.Right = e2.Right
+	return nil
 }
 
 func buildOpFN(o op) opFN {

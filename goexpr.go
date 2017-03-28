@@ -5,7 +5,25 @@ package goexpr
 
 import (
 	"fmt"
+	"time"
+
+	"gopkg.in/vmihailenco/msgpack.v2"
 )
+
+func init() {
+	msgpack.RegisterExt(70, &param{})
+	msgpack.RegisterExt(71, &constant{})
+	msgpack.RegisterExt(72, &notExpr{})
+	msgpack.RegisterExt(73, &any{})
+	msgpack.RegisterExt(74, &binaryExpr{})
+	msgpack.RegisterExt(75, &concat{})
+	msgpack.RegisterExt(76, ArrayList{})
+	msgpack.RegisterExt(77, &in{})
+	msgpack.RegisterExt(78, &length{})
+	msgpack.RegisterExt(79, &randExpr{})
+	msgpack.RegisterExt(80, &split{})
+	msgpack.RegisterExt(81, &substr{})
+}
 
 type Params interface {
 	Get(key string) interface{}
@@ -33,26 +51,26 @@ func Param(name string) Expr {
 }
 
 type param struct {
-	name string
+	Name string
 }
 
 func (e *param) Eval(params Params) interface{} {
-	return params.Get(e.name)
+	return params.Get(e.Name)
 }
 
 func (e *param) WalkParams(cb func(string)) {
-	cb(e.name)
+	cb(e.Name)
 }
 
 func (e *param) WalkOneToOneParams(cb func(string)) {
-	cb(e.name)
+	cb(e.Name)
 }
 
 func (e *param) WalkLists(cb func(List)) {
 }
 
 func (e *param) String() string {
-	return e.name
+	return e.Name
 }
 
 func Constant(val interface{}) Expr {
@@ -60,11 +78,11 @@ func Constant(val interface{}) Expr {
 }
 
 type constant struct {
-	val interface{}
+	Val interface{}
 }
 
 func (e *constant) Eval(params Params) interface{} {
-	return e.val
+	return e.Val
 }
 
 func (e *constant) WalkParams(cb func(string)) {
@@ -77,7 +95,59 @@ func (e *constant) WalkLists(cb func(List)) {
 }
 
 func (e *constant) String() string {
-	return fmt.Sprint(e.val)
+	return fmt.Sprint(e.Val)
+}
+
+func (e *constant) DecodeMsgpack(dec *msgpack.Decoder) error {
+	m := make(map[string]interface{})
+	err := dec.Decode(&m)
+	if err != nil {
+		return err
+	}
+	val := forceNumeric(m["Val"])
+	switch t := val.(type) {
+	case []interface{}:
+		// Special handling for times
+		if len(t) == 2 {
+			t0, t1 := forceNumeric(t[0]), forceNumeric(t[1])
+			switch s := t0.(type) {
+			case int:
+				switch n := t1.(type) {
+				case int:
+					val = time.Unix(int64(s), int64(n))
+				}
+			}
+		}
+	}
+	e.Val = val
+	return nil
+}
+
+func forceNumeric(val interface{}) interface{} {
+	// Convert all ints to int and floats to float64
+	switch t := val.(type) {
+	case int8:
+		val = int(t)
+	case int16:
+		val = int(t)
+	case int32:
+		val = int(t)
+	case int64:
+		val = int(t)
+	case uint:
+		val = int(t)
+	case byte:
+		val = int(t)
+	case uint16:
+		val = int(t)
+	case uint32:
+		val = int(t)
+	case uint64:
+		val = int(t)
+	case float32:
+		val = float64(t)
+	}
+	return val
 }
 
 func Not(wrapped Expr) Expr {
@@ -85,27 +155,27 @@ func Not(wrapped Expr) Expr {
 }
 
 type notExpr struct {
-	wrapped Expr
+	Wrapped Expr
 }
 
 func (e *notExpr) Eval(params Params) interface{} {
-	return !e.wrapped.Eval(params).(bool)
+	return !e.Wrapped.Eval(params).(bool)
 }
 
 func (e *notExpr) WalkParams(cb func(string)) {
-	e.wrapped.WalkParams(cb)
+	e.Wrapped.WalkParams(cb)
 }
 
 func (e *notExpr) WalkOneToOneParams(cb func(string)) {
-	e.wrapped.WalkOneToOneParams(cb)
+	e.Wrapped.WalkOneToOneParams(cb)
 }
 
 func (e *notExpr) WalkLists(cb func(List)) {
-	e.wrapped.WalkLists(cb)
+	e.Wrapped.WalkLists(cb)
 }
 
 func (e *notExpr) String() string {
-	return fmt.Sprintf("NOT %v", e.wrapped)
+	return fmt.Sprintf("NOT %v", e.Wrapped)
 }
 
 type MapParams map[string]interface{}

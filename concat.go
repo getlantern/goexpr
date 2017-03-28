@@ -11,14 +11,14 @@ func Concat(exprs ...Expr) Expr {
 }
 
 type concat struct {
-	delim   Expr
-	wrapped []Expr
+	Delim   Expr
+	Wrapped []Expr
 }
 
 func (e *concat) Eval(params Params) interface{} {
-	delim := e.delim.Eval(params)
+	delim := e.Delim.Eval(params)
 	buf := &bytes.Buffer{}
-	for i, wrapped := range e.wrapped {
+	for i, wrapped := range e.Wrapped {
 		first := i == 0
 		if !first {
 			fmt.Fprint(buf, delim)
@@ -29,8 +29,8 @@ func (e *concat) Eval(params Params) interface{} {
 }
 
 func (e *concat) WalkParams(cb func(string)) {
-	e.delim.WalkParams(cb)
-	for _, wrapped := range e.wrapped {
+	e.Delim.WalkParams(cb)
+	for _, wrapped := range e.Wrapped {
 		wrapped.WalkParams(cb)
 	}
 }
@@ -40,8 +40,8 @@ func (e *concat) WalkOneToOneParams(cb func(string)) {
 }
 
 func (e *concat) WalkLists(cb func(List)) {
-	e.delim.WalkLists(cb)
-	for _, wrapped := range e.wrapped {
+	e.Delim.WalkLists(cb)
+	for _, wrapped := range e.Wrapped {
 		wrapped.WalkLists(cb)
 	}
 }
@@ -49,8 +49,8 @@ func (e *concat) WalkLists(cb func(List)) {
 func (e *concat) String() string {
 	buf := &bytes.Buffer{}
 	buf.WriteString("CONCAT(")
-	buf.WriteString(e.delim.String())
-	for _, wrapped := range e.wrapped {
+	buf.WriteString(e.Delim.String())
+	for _, wrapped := range e.Wrapped {
 		buf.WriteString(", ")
 		fmt.Fprint(buf, wrapped.String())
 	}

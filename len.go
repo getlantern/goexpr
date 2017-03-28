@@ -11,11 +11,11 @@ func Len(source Expr) Expr {
 }
 
 type length struct {
-	source Expr
+	Source Expr
 }
 
 func (e *length) Eval(params Params) interface{} {
-	source := e.source.Eval(params)
+	source := e.Source.Eval(params)
 	if source == nil {
 		return nil
 	}
@@ -28,17 +28,17 @@ func (e *length) Eval(params Params) interface{} {
 }
 
 func (e *length) WalkParams(cb func(string)) {
-	e.source.WalkParams(cb)
+	e.Source.WalkParams(cb)
 }
 
 func (e *length) WalkOneToOneParams(cb func(string)) {
-	e.source.WalkOneToOneParams(cb)
+	e.Source.WalkOneToOneParams(cb)
 }
 
 func (e *length) WalkLists(cb func(List)) {
-	e.source.WalkLists(cb)
+	e.Source.WalkLists(cb)
 }
 
 func (e *length) String() string {
-	return fmt.Sprintf("LEN(%v)", e.source.String())
+	return fmt.Sprintf("LEN(%v)", e.Source.String())
 }

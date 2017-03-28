@@ -15,6 +15,7 @@ import (
 	"github.com/getlantern/golog"
 	"github.com/hashicorp/golang-lru"
 	geoip2 "github.com/oschwald/geoip2-golang"
+	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
 const (
@@ -28,6 +29,13 @@ var (
 	cityCache *lru.Cache
 	dbMutex   sync.RWMutex
 )
+
+func init() {
+	msgpack.RegisterExt(101, &city{})
+	msgpack.RegisterExt(102, &region{})
+	msgpack.RegisterExt(103, &regionCity{})
+	msgpack.RegisterExt(104, &countryCode{})
+}
 
 // Init initializes the Geolocation subsystem, storing the database file at the
 // given dbFile location. It will periodically fetch updates from the maxmind
@@ -54,11 +62,11 @@ func CITY(ip goexpr.Expr) goexpr.Expr {
 }
 
 type city struct {
-	ip goexpr.Expr
+	IP goexpr.Expr
 }
 
 func (e *city) Eval(params goexpr.Params) interface{} {
-	_ip := e.ip.Eval(params)
+	_ip := e.IP.Eval(params)
 	switch ip := _ip.(type) {
 	case string:
 		city := cityFor(ip)
@@ -71,7 +79,7 @@ func (e *city) Eval(params goexpr.Params) interface{} {
 }
 
 func (e *city) WalkParams(cb func(string)) {
-	e.ip.WalkParams(cb)
+	e.IP.WalkParams(cb)
 }
 
 func (e *city) WalkOneToOneParams(cb func(string)) {
@@ -79,11 +87,11 @@ func (e *city) WalkOneToOneParams(cb func(string)) {
 }
 
 func (e *city) WalkLists(cb func(goexpr.List)) {
-	e.ip.WalkLists(cb)
+	e.IP.WalkLists(cb)
 }
 
 func (e *city) String() string {
-	return fmt.Sprintf("CITY(%v)", e.ip)
+	return fmt.Sprintf("CITY(%v)", e.IP)
 }
 
 // REGION returns the region name for the IP, e.g. "Texas"
@@ -92,11 +100,11 @@ func REGION(ip goexpr.Expr) goexpr.Expr {
 }
 
 type region struct {
-	ip goexpr.Expr
+	IP goexpr.Expr
 }
 
 func (e *region) Eval(params goexpr.Params) interface{} {
-	_ip := e.ip.Eval(params)
+	_ip := e.IP.Eval(params)
 	switch ip := _ip.(type) {
 	case string:
 		city := cityFor(ip)
@@ -112,7 +120,7 @@ func (e *region) Eval(params goexpr.Params) interface{} {
 }
 
 func (e *region) WalkParams(cb func(string)) {
-	e.ip.WalkParams(cb)
+	e.IP.WalkParams(cb)
 }
 
 func (e *region) WalkOneToOneParams(cb func(string)) {
@@ -120,11 +128,11 @@ func (e *region) WalkOneToOneParams(cb func(string)) {
 }
 
 func (e *region) WalkLists(cb func(goexpr.List)) {
-	e.ip.WalkLists(cb)
+	e.IP.WalkLists(cb)
 }
 
 func (e *region) String() string {
-	return fmt.Sprintf("REGION(%v)", e.ip)
+	return fmt.Sprintf("REGION(%v)", e.IP)
 }
 
 // REGION_CITY returns the region and city name for the IP, e.g. "Texas, Austin"
@@ -133,11 +141,11 @@ func REGION_CITY(ip goexpr.Expr) goexpr.Expr {
 }
 
 type regionCity struct {
-	ip goexpr.Expr
+	IP goexpr.Expr
 }
 
 func (e *regionCity) Eval(params goexpr.Params) interface{} {
-	_ip := e.ip.Eval(params)
+	_ip := e.IP.Eval(params)
 	switch ip := _ip.(type) {
 	case string:
 		city := cityFor(ip)
@@ -154,7 +162,7 @@ func (e *regionCity) Eval(params goexpr.Params) interface{} {
 }
 
 func (e *regionCity) WalkParams(cb func(string)) {
-	e.ip.WalkParams(cb)
+	e.IP.WalkParams(cb)
 }
 
 func (e *regionCity) WalkOneToOneParams(cb func(string)) {
@@ -166,7 +174,7 @@ func (e *regionCity) WalkLists(cb func(goexpr.List)) {
 }
 
 func (e *regionCity) String() string {
-	return fmt.Sprintf("REGION_CITY(%v)", e.ip)
+	return fmt.Sprintf("REGION_CITY(%v)", e.IP)
 }
 
 // COUNTRY_CODE returns the 2 digit ISO country code for the ip, e.g. "US"
@@ -175,11 +183,11 @@ func COUNTRY_CODE(ip goexpr.Expr) goexpr.Expr {
 }
 
 type countryCode struct {
-	ip goexpr.Expr
+	IP goexpr.Expr
 }
 
 func (e *countryCode) Eval(params goexpr.Params) interface{} {
-	_ip := e.ip.Eval(params)
+	_ip := e.IP.Eval(params)
 	switch ip := _ip.(type) {
 	case string:
 		city := cityFor(ip)
@@ -192,7 +200,7 @@ func (e *countryCode) Eval(params goexpr.Params) interface{} {
 }
 
 func (e *countryCode) WalkParams(cb func(string)) {
-	e.ip.WalkParams(cb)
+	e.IP.WalkParams(cb)
 }
 
 func (e *countryCode) WalkOneToOneParams(cb func(string)) {
@@ -200,11 +208,11 @@ func (e *countryCode) WalkOneToOneParams(cb func(string)) {
 }
 
 func (e *countryCode) WalkLists(cb func(goexpr.List)) {
-	e.ip.WalkLists(cb)
+	e.IP.WalkLists(cb)
 }
 
 func (e *countryCode) String() string {
-	return fmt.Sprintf("COUNTRY_CODE(%v)", e.ip)
+	return fmt.Sprintf("COUNTRY_CODE(%v)", e.IP)
 }
 
 func cityFor(ip string) *geoip2.City {

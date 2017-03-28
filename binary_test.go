@@ -194,7 +194,10 @@ func TestBinaryComparisons(t *testing.T) {
 		params := MapParams{"a": scenario[1]}
 		e, err := Binary(scenario[0].(string), Param("a"), Constant(scenario[2]))
 		if assert.NoError(t, err, "Unable to create Binary expression for %v", scenario) {
-			assert.Equal(t, scenario[3], e.Eval(params), "Evaluation failed for %v", scenario)
+			e = msgpacked(t, e)
+			if !assert.Equal(t, scenario[3], e.Eval(params), "Evaluation failed for %v", scenario) {
+				t.Logf("%v : %v", e.(*binaryExpr).Left, e.(*binaryExpr).Right)
+			}
 		}
 	}
 }

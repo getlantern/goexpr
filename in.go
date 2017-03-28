@@ -27,20 +27,20 @@ func (al ArrayList) String() string {
 }
 
 func In(val Expr, candidates List) Expr {
-	return &in{val: val, _candidates: candidates}
+	return &in{Val: val, Candidates: candidates}
 }
 
 type in struct {
-	val         Expr
-	_candidates List
+	Val         Expr
+	Candidates  List
 	initialized bool
 	candidates  []Expr
 }
 
 func (e *in) Eval(params Params) interface{} {
-	v := e.val.Eval(params)
+	v := e.Val.Eval(params)
 	if !e.initialized {
-		e.candidates = e._candidates.Values()
+		e.candidates = e.Candidates.Values()
 		e.initialized = true
 	}
 	for _, candidate := range e.candidates {
@@ -53,7 +53,7 @@ func (e *in) Eval(params Params) interface{} {
 }
 
 func (e *in) WalkParams(cb func(string)) {
-	e.val.WalkParams(cb)
+	e.Val.WalkParams(cb)
 }
 
 func (e *in) WalkOneToOneParams(cb func(string)) {
@@ -61,10 +61,10 @@ func (e *in) WalkOneToOneParams(cb func(string)) {
 }
 
 func (e *in) WalkLists(cb func(List)) {
-	cb(e._candidates)
-	e.val.WalkLists(cb)
+	cb(e.Candidates)
+	e.Val.WalkLists(cb)
 }
 
 func (e *in) String() string {
-	return fmt.Sprintf("%v IN(%v)", e.val.String(), e._candidates)
+	return fmt.Sprintf("%v IN(%v)", e.Val.String(), e.Candidates)
 }

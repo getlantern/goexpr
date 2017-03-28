@@ -7,8 +7,8 @@ import (
 
 func TestIn(t *testing.T) {
 	list1 := ArrayList{Constant(1), Constant(3), Constant(6)}
-	e1 := In(Constant(5), list1)
-	e2 := In(Constant(5), ArrayList{Constant(1), Constant(3), Constant(5.0), Constant(6)})
+	e1 := msgpacked(t, In(Constant(5), list1))
+	e2 := msgpacked(t, In(Constant(5), ArrayList{Constant(1), Constant(3), Constant(5.0), Constant(6)}))
 	assert.Equal(t, false, e1.Eval(nil))
 	assert.Equal(t, true, e2.Eval(nil))
 	assert.Equal(t, "5 IN(1, 3, 6)", e1.String())

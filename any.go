@@ -11,11 +11,11 @@ func Any(exprs ...Expr) Expr {
 }
 
 type any struct {
-	exprs []Expr
+	Exprs []Expr
 }
 
 func (e *any) Eval(params Params) interface{} {
-	for _, expr := range e.exprs {
+	for _, expr := range e.Exprs {
 		v := expr.Eval(params)
 		if v != nil && v != "" {
 			return v
@@ -25,7 +25,7 @@ func (e *any) Eval(params Params) interface{} {
 }
 
 func (e *any) WalkParams(cb func(string)) {
-	for _, wrapped := range e.exprs {
+	for _, wrapped := range e.Exprs {
 		wrapped.WalkParams(cb)
 	}
 }
@@ -35,7 +35,7 @@ func (e *any) WalkOneToOneParams(cb func(string)) {
 }
 
 func (e *any) WalkLists(cb func(List)) {
-	for _, e := range e.exprs {
+	for _, e := range e.Exprs {
 		e.WalkLists(cb)
 	}
 }
@@ -44,7 +44,7 @@ func (e *any) String() string {
 	result := &bytes.Buffer{}
 	result.WriteString("ANY(")
 	first := true
-	for _, expr := range e.exprs {
+	for _, expr := range e.Exprs {
 		if !first {
 			result.WriteByte(',')
 		}

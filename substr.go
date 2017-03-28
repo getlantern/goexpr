@@ -11,23 +11,23 @@ func Substr(source Expr, from Expr, length Expr) Expr {
 }
 
 type substr struct {
-	source Expr
-	from   Expr
-	length Expr
+	Source Expr
+	From   Expr
+	Length Expr
 }
 
 func (e *substr) Eval(params Params) interface{} {
-	source := e.source.Eval(params)
+	source := e.Source.Eval(params)
 	if source == nil {
 		return nil
 	}
 	result := source.(string)
-	from := e.from.Eval(params).(int)
+	from := e.From.Eval(params).(int)
 	if from >= len(result) {
 		return nil
 	}
 	result = result[from:]
-	length := e.length.Eval(params).(int)
+	length := e.Length.Eval(params).(int)
 	if length > 0 && length < len(result) {
 		result = result[:length]
 	}
@@ -35,9 +35,9 @@ func (e *substr) Eval(params Params) interface{} {
 }
 
 func (e *substr) WalkParams(cb func(string)) {
-	e.source.WalkParams(cb)
-	e.from.WalkParams(cb)
-	e.length.WalkParams(cb)
+	e.Source.WalkParams(cb)
+	e.From.WalkParams(cb)
+	e.Length.WalkParams(cb)
 }
 
 func (e *substr) WalkOneToOneParams(cb func(string)) {
@@ -45,11 +45,11 @@ func (e *substr) WalkOneToOneParams(cb func(string)) {
 }
 
 func (e *substr) WalkLists(cb func(List)) {
-	e.source.WalkLists(cb)
-	e.from.WalkLists(cb)
-	e.length.WalkLists(cb)
+	e.Source.WalkLists(cb)
+	e.From.WalkLists(cb)
+	e.Length.WalkLists(cb)
 }
 
 func (e *substr) String() string {
-	return fmt.Sprintf("substr(%v,%v,%v)", e.source.String(), e.from.String(), e.length.String())
+	return fmt.Sprintf("substr(%v,%v,%v)", e.Source.String(), e.From.String(), e.Length.String())
 }

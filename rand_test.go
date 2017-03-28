@@ -7,7 +7,7 @@ import (
 )
 
 func TestRand(t *testing.T) {
-	rand := Rand()
+	rand := msgpacked(t, Rand())
 	countOfTrue := float64(0)
 	iters := 1000000
 	for i := 0; i < iters; i++ {

@@ -6,11 +6,16 @@ import (
 	"sync/atomic"
 
 	"github.com/getlantern/goexpr"
+	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
 var (
 	provider atomic.Value
 )
+
+func init() {
+	msgpack.RegisterExt(100, &ispExpr{})
+}
 
 // Provider implements the actual looking up of ISP and ASN information.
 type Provider interface {
@@ -68,16 +73,16 @@ func ASName(ip goexpr.Expr) goexpr.Expr {
 }
 
 type ispExpr struct {
-	name string
-	ip   goexpr.Expr
-	fn   func(ip string) (interface{}, bool)
+	Name string
+	IP   goexpr.Expr
+	Fn   func(ip string) (interface{}, bool)
 }
 
 func (e *ispExpr) Eval(params goexpr.Params) interface{} {
-	_ip := e.ip.Eval(params)
+	_ip := e.IP.Eval(params)
 	switch ip := _ip.(type) {
 	case string:
-		result, found := e.fn(ip)
+		result, found := e.Fn(ip)
 		if !found {
 			return nil
 		}
@@ -87,7 +92,7 @@ func (e *ispExpr) Eval(params goexpr.Params) interface{} {
 }
 
 func (e *ispExpr) WalkParams(cb func(string)) {
-	e.ip.WalkParams(cb)
+	e.IP.WalkParams(cb)
 }
 
 func (e *ispExpr) WalkOneToOneParams(cb func(string)) {
@@ -95,9 +100,9 @@ func (e *ispExpr) WalkOneToOneParams(cb func(string)) {
 }
 
 func (e *ispExpr) WalkLists(cb func(goexpr.List)) {
-	e.ip.WalkLists(cb)
+	e.IP.WalkLists(cb)
 }
 
 func (e *ispExpr) String() string {
-	return fmt.Sprintf("%v(%v)", e.name, e.ip)
+	return fmt.Sprintf("%v(%v)", e.Name, e.IP)
 }

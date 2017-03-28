@@ -2,12 +2,14 @@ package redis
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/getlantern/goexpr"
 	"github.com/getlantern/golog"
 	"github.com/hashicorp/golang-lru"
 	"gopkg.in/redis.v5"
-	"sync"
-	"time"
+	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
 var (
@@ -18,6 +20,10 @@ var (
 	cacheSize   int
 	cacheMx     sync.RWMutex
 )
+
+func init() {
+	msgpack.RegisterExt(90, &hget{})
+}
 
 func Configure(client *redis.Client, maxCacheSize int) {
 	redisClient = client
@@ -53,23 +59,23 @@ func warmCaches() {
 
 func HGet(hash goexpr.Expr, key goexpr.Expr) goexpr.Expr {
 	return &hget{
-		hash: hash,
-		key:  key,
+		Hash: hash,
+		Key:  key,
 	}
 }
 
 type hget struct {
-	hash goexpr.Expr
-	key  goexpr.Expr
+	Hash goexpr.Expr
+	Key  goexpr.Expr
 }
 
 func (e *hget) Eval(params goexpr.Params) interface{} {
-	_hash := e.hash.Eval(params)
+	_hash := e.Hash.Eval(params)
 	if _hash == nil {
 		return nil
 	}
 	hash := _hash.(string)
-	key := e.key.Eval(params)
+	key := e.Key.Eval(params)
 	if key == nil {
 		return nil
 	}
@@ -97,8 +103,8 @@ func (e *hget) Eval(params goexpr.Params) interface{} {
 }
 
 func (e *hget) WalkParams(cb func(string)) {
-	e.hash.WalkParams(cb)
-	e.key.WalkParams(cb)
+	e.Hash.WalkParams(cb)
+	e.Key.WalkParams(cb)
 }
 
 func (e *hget) WalkOneToOneParams(cb func(string)) {
@@ -106,9 +112,9 @@ func (e *hget) WalkOneToOneParams(cb func(string)) {
 }
 
 func (e *hget) WalkLists(cb func(goexpr.List)) {
-	e.key.WalkLists(cb)
+	e.Key.WalkLists(cb)
 }
 
 func (e *hget) String() string {
-	return fmt.Sprintf("HGET(%v,%v)", e.hash, e.key)
+	return fmt.Sprintf("HGET(%v,%v)", e.Hash, e.Key)
 }
