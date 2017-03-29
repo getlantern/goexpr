@@ -23,7 +23,12 @@ func (e *concat) Eval(params Params) interface{} {
 		if !first {
 			fmt.Fprint(buf, delim)
 		}
-		fmt.Fprint(buf, wrapped.Eval(params))
+		val := wrapped.Eval(params)
+		if val == nil {
+			// replace nil with empty string
+			val = ""
+		}
+		fmt.Fprint(buf, val)
 	}
 	return buf.String()
 }
