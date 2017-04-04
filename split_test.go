@@ -12,5 +12,9 @@ func TestSplit(t *testing.T) {
 	assert.Equal(t, "a", msgpacked(t, Split(source, pipe, Constant(0))).Eval(nil))
 	assert.Equal(t, "b", msgpacked(t, Split(source, pipe, Constant(1))).Eval(nil))
 	assert.Equal(t, "c", msgpacked(t, Split(source, pipe, Constant(2))).Eval(nil))
+	assert.Equal(t, "c", msgpacked(t, Split(source, pipe, Constant(-1))).Eval(nil))
+	assert.Equal(t, "b", msgpacked(t, Split(source, pipe, Constant(-2))).Eval(nil))
+	assert.Equal(t, "a", msgpacked(t, Split(source, pipe, Constant(-3))).Eval(nil))
 	assert.Nil(t, msgpacked(t, Split(source, pipe, Constant(3))).Eval(nil))
+	assert.Nil(t, msgpacked(t, Split(source, pipe, Constant(-4))).Eval(nil))
 }
