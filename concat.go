@@ -10,9 +10,9 @@ func Concat(exprs ...Expr) Expr {
 	return &concat{exprs[0], exprs[1:], false}
 }
 
-// OConcat joins a list of values using the first as a delimiter. Unlike Concat,
-// OConcat assumes that it is a one-to-one function.
-func OConcat(exprs ...Expr) Expr {
+// PConcat joins a list of values using the first as a delimiter. Unlike Concat,
+// PConcat assumes that it is a one-to-one function.
+func PConcat(exprs ...Expr) Expr {
 	return &concat{exprs[0], exprs[1:], true}
 }
 
@@ -65,7 +65,11 @@ func (e *concat) WalkLists(cb func(List)) {
 
 func (e *concat) String() string {
 	buf := &bytes.Buffer{}
-	buf.WriteString("CONCAT(")
+	if e.OneToOne {
+		buf.WriteString("PCONCAT(")
+	} else {
+		buf.WriteString("CONCAT(")
+	}
 	buf.WriteString(e.Delim.String())
 	for _, wrapped := range e.Wrapped {
 		buf.WriteString(", ")
