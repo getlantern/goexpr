@@ -7,12 +7,19 @@ import (
 
 // Concat joins a list of values using the first as a delimiter.
 func Concat(exprs ...Expr) Expr {
-	return &concat{exprs[0], exprs[1:]}
+	return &concat{exprs[0], exprs[1:], false}
+}
+
+// OConcat joins a list of values using the first as a delimiter. Unlike Concat,
+// OConcat assumes that it is a one-to-one function.
+func OConcat(exprs ...Expr) Expr {
+	return &concat{exprs[0], exprs[1:], true}
 }
 
 type concat struct {
-	Delim   Expr
-	Wrapped []Expr
+	Delim    Expr
+	Wrapped  []Expr
+	OneToOne bool
 }
 
 func (e *concat) Eval(params Params) interface{} {
@@ -41,7 +48,12 @@ func (e *concat) WalkParams(cb func(string)) {
 }
 
 func (e *concat) WalkOneToOneParams(cb func(string)) {
-	// this function is not one-to-one, stop
+	if e.OneToOne {
+		e.Delim.WalkOneToOneParams(cb)
+		for _, wrapped := range e.Wrapped {
+			wrapped.WalkOneToOneParams(cb)
+		}
+	}
 }
 
 func (e *concat) WalkLists(cb func(List)) {
