@@ -269,6 +269,7 @@ func TestANDOR(t *testing.T) {
 	for _, scenario := range scenarios {
 		params := MapParams{"a": scenario[1]}
 		e, err := Binary(scenario[0].(string), Param("a"), Constant(scenario[2]))
+		e = msgpacked(t, e)
 		if assert.NoError(t, err, "Unable to create Binary expression for %v", scenario) {
 			assert.Equal(t, scenario[3], e.Eval(params), "Evaluation failed for %v", scenario)
 			assert.NotEqual(t, scenario[3].(bool), Not(e).Eval(params), "Evaluation failed for Not of %v", scenario)

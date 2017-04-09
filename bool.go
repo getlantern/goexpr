@@ -2,6 +2,8 @@ package goexpr
 
 import (
 	"fmt"
+
+	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
 // Boolean accepts the operators AND, OR and returns a short-circuiting
@@ -40,19 +42,19 @@ func or(a Expr, b Expr, params Params) bool {
 }
 
 type booleanExpr struct {
-	operatorString string
+	OperatorString string
 	operator       boolFN
-	left           Expr
-	right          Expr
+	Left           Expr
+	Right          Expr
 }
 
 func (e *booleanExpr) Eval(params Params) interface{} {
-	return e.operator(e.left, e.right, params)
+	return e.operator(e.Left, e.Right, params)
 }
 
 func (e *booleanExpr) WalkParams(cb func(string)) {
-	e.left.WalkParams(cb)
-	e.right.WalkParams(cb)
+	e.Left.WalkParams(cb)
+	e.Right.WalkParams(cb)
 }
 
 func (e *booleanExpr) WalkOneToOneParams(cb func(string)) {
@@ -60,10 +62,31 @@ func (e *booleanExpr) WalkOneToOneParams(cb func(string)) {
 }
 
 func (e *booleanExpr) WalkLists(cb func(List)) {
-	e.left.WalkLists(cb)
-	e.right.WalkLists(cb)
+	e.Left.WalkLists(cb)
+	e.Right.WalkLists(cb)
 }
 
 func (e *booleanExpr) String() string {
-	return fmt.Sprintf("(%v %v %v)", e.left, e.operatorString, e.right)
+	return fmt.Sprintf("(%v %v %v)", e.Left, e.OperatorString, e.Right)
+}
+
+func (e *booleanExpr) DecodeMsgpack(dec *msgpack.Decoder) error {
+	m := make(map[string]interface{})
+	err := dec.Decode(&m)
+	if err != nil {
+		return err
+	}
+	_e2, err := Boolean(m["OperatorString"].(string), m["Left"].(Expr), m["Right"].(Expr))
+	if err != nil {
+		return err
+	}
+	if _e2 == nil {
+		return fmt.Errorf("Unknown boolean expression %v", m["OperatorString"])
+	}
+	e2 := _e2.(*booleanExpr)
+	e.OperatorString = e2.OperatorString
+	e.operator = e2.operator
+	e.Left = e2.Left
+	e.Right = e2.Right
+	return nil
 }

@@ -23,6 +23,7 @@ func init() {
 	msgpack.RegisterExt(79, &randExpr{})
 	msgpack.RegisterExt(80, &split{})
 	msgpack.RegisterExt(81, &substr{})
+	msgpack.RegisterExt(82, &booleanExpr{})
 }
 
 type Params interface {
