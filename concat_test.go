@@ -6,26 +6,37 @@ import (
 )
 
 func TestConcat(t *testing.T) {
-	doTestConcat(t, Concat, "CONCAT")
-}
-
-func TestPConcat(t *testing.T) {
-	doTestConcat(t, PConcat, "PCONCAT")
-}
-
-func doTestConcat(t *testing.T, fn func(...Expr) Expr, name string) {
 	pipe := Constant("|")
 	a := Constant("a")
 	b := Constant(nil)
 	c := Constant("c")
 
-	assert.Equal(t, "", msgpacked(t, fn(pipe)).Eval(nil))
-	assert.Equal(t, "a", msgpacked(t, fn(pipe, a)).Eval(nil))
-	assert.Equal(t, "a|", msgpacked(t, fn(pipe, a, b)).Eval(nil))
-	assert.Equal(t, "a||c", msgpacked(t, fn(pipe, a, b, c)).Eval(nil))
+	assert.Equal(t, "", msgpacked(t, Concat(pipe)).Eval(nil))
+	assert.Equal(t, "a", msgpacked(t, Concat(pipe, a)).Eval(nil))
+	assert.Equal(t, "a|", msgpacked(t, Concat(pipe, a, b)).Eval(nil))
+	assert.Equal(t, "a||c", msgpacked(t, Concat(pipe, a, b, c)).Eval(nil))
 
-	assert.Equal(t, name+"(|)", msgpacked(t, fn(pipe)).String())
-	assert.Equal(t, name+"(|, a)", msgpacked(t, fn(pipe, a)).String())
-	assert.Equal(t, name+"(|, a, <nil>)", msgpacked(t, fn(pipe, a, b)).String())
-	assert.Equal(t, name+"(|, a, <nil>, c)", msgpacked(t, fn(pipe, a, b, c)).String())
+	assert.Equal(t, "CONCAT(|)", msgpacked(t, Concat(pipe)).String())
+	assert.Equal(t, "CONCAT(|, a)", msgpacked(t, Concat(pipe, a)).String())
+	assert.Equal(t, "CONCAT(|, a, <nil>)", msgpacked(t, Concat(pipe, a, b)).String())
+	assert.Equal(t, "CONCAT(|, a, <nil>, c)", msgpacked(t, Concat(pipe, a, b, c)).String())
+}
+
+func TestWalkOneToOneConcat(t *testing.T) {
+	e := msgpacked(t, Concat(Param("a"), Param("b")))
+
+	found := make(map[string]bool)
+	e.WalkOneToOneParams(func(name string) {
+		found[name] = true
+	})
+	assert.Empty(t, found)
+
+	pe := msgpacked(t, P(e))
+	found = make(map[string]bool)
+	pe.WalkOneToOneParams(func(name string) {
+		found[name] = true
+	})
+	assert.True(t, found["a"])
+	assert.True(t, found["b"])
+	assert.Equal(t, "P(CONCAT(a, b))", pe.String())
 }

@@ -7,19 +7,12 @@ import (
 
 // Concat joins a list of values using the first as a delimiter.
 func Concat(exprs ...Expr) Expr {
-	return &concat{exprs[0], exprs[1:], false}
-}
-
-// PConcat joins a list of values using the first as a delimiter. Unlike Concat,
-// PConcat assumes that it is a one-to-one function.
-func PConcat(exprs ...Expr) Expr {
-	return &concat{exprs[0], exprs[1:], true}
+	return &concat{exprs[0], exprs[1:]}
 }
 
 type concat struct {
-	Delim    Expr
-	Wrapped  []Expr
-	OneToOne bool
+	Delim   Expr
+	Wrapped []Expr
 }
 
 func (e *concat) Eval(params Params) interface{} {
@@ -48,12 +41,7 @@ func (e *concat) WalkParams(cb func(string)) {
 }
 
 func (e *concat) WalkOneToOneParams(cb func(string)) {
-	if e.OneToOne {
-		e.Delim.WalkOneToOneParams(cb)
-		for _, wrapped := range e.Wrapped {
-			wrapped.WalkOneToOneParams(cb)
-		}
-	}
+	// this function is not one-to-one, stop
 }
 
 func (e *concat) WalkLists(cb func(List)) {
@@ -65,11 +53,7 @@ func (e *concat) WalkLists(cb func(List)) {
 
 func (e *concat) String() string {
 	buf := &bytes.Buffer{}
-	if e.OneToOne {
-		buf.WriteString("PCONCAT(")
-	} else {
-		buf.WriteString("CONCAT(")
-	}
+	buf.WriteString("CONCAT(")
 	buf.WriteString(e.Delim.String())
 	for _, wrapped := range e.Wrapped {
 		buf.WriteString(", ")

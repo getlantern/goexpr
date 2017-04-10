@@ -24,6 +24,7 @@ func init() {
 	msgpack.RegisterExt(80, &split{})
 	msgpack.RegisterExt(81, &substr{})
 	msgpack.RegisterExt(82, &booleanExpr{})
+	msgpack.RegisterExt(83, &oneToOne{})
 }
 
 type Params interface {
@@ -183,4 +184,34 @@ type MapParams map[string]interface{}
 
 func (p MapParams) Get(name string) interface{} {
 	return p[name]
+}
+
+// P marks the wrapped expression as a One-to-One function.
+func P(wrapped Expr) Expr {
+	return &oneToOne{wrapped}
+}
+
+type oneToOne struct {
+	Wrapped Expr
+}
+
+func (e *oneToOne) Eval(params Params) interface{} {
+	return e.Wrapped.Eval(params)
+}
+
+func (e *oneToOne) WalkParams(cb func(string)) {
+	e.Wrapped.WalkParams(cb)
+}
+
+func (e *oneToOne) WalkOneToOneParams(cb func(string)) {
+	// since this a oneToOne function, we can just walk the regular params
+	e.Wrapped.WalkParams(cb)
+}
+
+func (e *oneToOne) WalkLists(cb func(List)) {
+	e.Wrapped.WalkLists(cb)
+}
+
+func (e *oneToOne) String() string {
+	return fmt.Sprintf("P(%v)", e.Wrapped)
 }
