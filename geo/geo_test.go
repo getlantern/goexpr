@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	err := Init("geolite2-city.mmdb.gz")
+	err := Init("geolite2-city.mmdb.gz", 1)
 	if err != nil {
 		panic(err)
 	}

@@ -13,7 +13,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	isp.SetProvider(prov)
+	isp.SetProvider(prov, 1)
 }
 
 func TestISPGoodIP(t *testing.T) {

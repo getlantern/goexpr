@@ -19,15 +19,21 @@ import (
 )
 
 const (
+	// DefaultCacheSize determines the default size for the ip cache
+	DefaultCacheSize = 100000
+
 	dbURL = "https://s3.amazonaws.com/lantern/GeoLite2-City.mmdb.gz"
 )
 
 var (
-	log = golog.LoggerFor("goexpr")
+	log = golog.LoggerFor("goexpr.geo")
 
-	db        *geoip2.Reader
-	cityCache *lru.Cache
-	dbMutex   sync.RWMutex
+	db               *geoip2.Reader
+	cityCache        *lru.Cache
+	regionCache      *lru.Cache
+	regionCityCache  *lru.Cache
+	countryCodeCache *lru.Cache
+	dbMutex          sync.RWMutex
 )
 
 func init() {
@@ -40,7 +46,11 @@ func init() {
 // Init initializes the Geolocation subsystem, storing the database file at the
 // given dbFile location. It will periodically fetch updates from the maxmind
 // website.
-func Init(dbFile string) error {
+func Init(dbFile string, cacheSize int) error {
+	if cacheSize <= 0 {
+		cacheSize = DefaultCacheSize
+		log.Debugf("Defaulted ip cache size to %v", cacheSize)
+	}
 	_db, dbDate, err := readDbFromFile(dbFile)
 	if err != nil {
 		_db, dbDate, err = readDbFromWeb(dbFile)
@@ -49,7 +59,10 @@ func Init(dbFile string) error {
 		}
 	}
 	dbMutex.Lock()
-	cityCache, _ = lru.New(1000000)
+	cityCache, _ = lru.New(cacheSize)
+	regionCache, _ = lru.New(cacheSize)
+	regionCityCache, _ = lru.New(cacheSize)
+	countryCodeCache, _ = lru.New(cacheSize)
 	db = _db
 	dbMutex.Unlock()
 	go keepDbCurrent(dbFile, dbDate)
@@ -69,6 +82,10 @@ func (e *city) Eval(params goexpr.Params) interface{} {
 	_ip := e.IP.Eval(params)
 	switch ip := _ip.(type) {
 	case string:
+		cityName, found := cityCache.Get(ip)
+		if found {
+			return cityName
+		}
 		city := cityFor(ip)
 		if city == nil {
 			return nil
@@ -107,6 +124,10 @@ func (e *region) Eval(params goexpr.Params) interface{} {
 	_ip := e.IP.Eval(params)
 	switch ip := _ip.(type) {
 	case string:
+		region, found := regionCache.Get(ip)
+		if found {
+			return region
+		}
 		city := cityFor(ip)
 		if city == nil {
 			return nil
@@ -148,6 +169,10 @@ func (e *regionCity) Eval(params goexpr.Params) interface{} {
 	_ip := e.IP.Eval(params)
 	switch ip := _ip.(type) {
 	case string:
+		regionCity, found := regionCityCache.Get(ip)
+		if found {
+			return regionCity
+		}
 		city := cityFor(ip)
 		if city == nil {
 			return nil
@@ -190,6 +215,10 @@ func (e *countryCode) Eval(params goexpr.Params) interface{} {
 	_ip := e.IP.Eval(params)
 	switch ip := _ip.(type) {
 	case string:
+		countryCode, found := countryCodeCache.Get(ip)
+		if found {
+			return countryCode
+		}
 		city := cityFor(ip)
 		if city == nil {
 			return nil
@@ -216,26 +245,20 @@ func (e *countryCode) String() string {
 }
 
 func cityFor(ip string) *geoip2.City {
-	d, c := getDBAndCache()
-	_city, found := c.Get(ip)
-	if found {
-		return _city.(*geoip2.City)
-	}
+	d := getDB()
 	parsedIP := net.ParseIP(ip)
 	city, err := d.City(parsedIP)
-	cityCache.Add(ip, city)
 	if err != nil {
 		return nil
 	}
 	return city
 }
 
-func getDBAndCache() (*geoip2.Reader, *lru.Cache) {
+func getDB() *geoip2.Reader {
 	dbMutex.RLock()
 	_db := db
-	_cache := cityCache
 	dbMutex.RUnlock()
-	return _db, _cache
+	return _db
 }
 
 // readDbFromFile reads the MaxMind database and timestamp from a file
@@ -283,6 +306,9 @@ func keepDbCurrent(dbFile string, dbDate time.Time) {
 			dbMutex.Lock()
 			db = _db
 			cityCache.Purge()
+			regionCache.Purge()
+			regionCityCache.Purge()
+			countryCodeCache.Purge()
 			dbMutex.Unlock()
 		}
 	}

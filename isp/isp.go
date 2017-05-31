@@ -6,10 +6,18 @@ import (
 	"sync/atomic"
 
 	"github.com/getlantern/goexpr"
+	"github.com/getlantern/golog"
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
+const (
+	// DefaultCacheSize determines the default size for the ip cache
+	DefaultCacheSize = 100000
+)
+
 var (
+	log = golog.LoggerFor("goexpr.isp")
+
 	provider atomic.Value
 )
 
@@ -35,8 +43,12 @@ type Provider interface {
 }
 
 // SetProvider sets the ISP data provider
-func SetProvider(prov Provider) {
-	provider.Store(withCaching(prov, 1000000))
+func SetProvider(prov Provider, cacheSize int) {
+	if cacheSize <= 0 {
+		cacheSize = DefaultCacheSize
+		log.Debugf("Defaulted ip cache size to %v", cacheSize)
+	}
+	provider.Store(withCaching(prov, cacheSize))
 }
 
 func getProvider() Provider {
