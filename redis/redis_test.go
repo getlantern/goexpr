@@ -93,3 +93,22 @@ func TestLua(t *testing.T) {
 	assert.EqualValues(t, 1, Lua(script, []goexpr.Expr{goexpr.Constant("s1")}, goexpr.Constant("ka")).Eval(nil).(int64), "ka should be in new set")
 	assert.EqualValues(t, 1, Lua(script, []goexpr.Expr{goexpr.Constant("s1")}, goexpr.Constant("kb")).Eval(nil).(int64), "kb should be in new set")
 }
+
+func TestLuaStringFind(t *testing.T) {
+	script := goexpr.Constant(`return string.find(redis.call('HGET', KEYS[1], ARGV[1]), ARGV[2])`)
+	SetCacheInvalidationPeriod(testCacheInvalidationPeriod)
+	defer SetCacheInvalidationPeriod(defaultCacheInvalidationPeriod)
+
+	redis, err := testredis.Open()
+	if !assert.NoError(t, err) {
+		return
+	}
+	defer redis.Close()
+
+	client := redis.Client()
+	Configure(redis.Client(), 100)
+	client.HSet("h1", "ka", "iamastring")
+
+	assert.True(t, Lua(script, []goexpr.Expr{goexpr.Constant("h1")}, goexpr.Constant("ka"), goexpr.Constant("amas")).Eval(nil).(int64) > 0, "amas should be found")
+	assert.Nil(t, Lua(script, []goexpr.Expr{goexpr.Constant("h1")}, goexpr.Constant("ka"), goexpr.Constant(`"lamas":`)).Eval(nil), "lamas should not be found")
+}
