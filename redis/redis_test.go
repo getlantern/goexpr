@@ -94,8 +94,24 @@ func TestLua(t *testing.T) {
 	assert.EqualValues(t, 1, Lua(script, []goexpr.Expr{goexpr.Constant("s1")}, goexpr.Constant("kb")).Eval(nil).(int64), "kb should be in new set")
 }
 
-func TestLuaStringFind(t *testing.T) {
-	script := goexpr.Constant(`return string.find(redis.call('HGET', KEYS[1], ARGV[1]), ARGV[2])`)
+func TestLuaComplex(t *testing.T) {
+	script := goexpr.Constant(`
+		local access_data = redis.call('HGET', KEYS[1], ARGV[1])
+		if not access_data then
+			return "unknown"
+		end
+
+		local kcp = string.find(access_data, "kcpsettings:")
+		if kcp then
+			return "kcp"
+		end
+
+		local pt = string.match(access_data, "pluggabletransport: '(%a+)'")
+		if pt then
+			return pt
+		end
+
+		return "https"`)
 	SetCacheInvalidationPeriod(testCacheInvalidationPeriod)
 	defer SetCacheInvalidationPeriod(defaultCacheInvalidationPeriod)
 
@@ -107,8 +123,19 @@ func TestLuaStringFind(t *testing.T) {
 
 	client := redis.Client()
 	Configure(redis.Client(), 100)
-	client.HSet("h1", "ka", "iamastring")
+	client.HSet("h1", "https", `{
+	pluggabletransport: ''
+}`)
+	client.HSet("h1", "lampshade", `{
+	pluggabletransport: 'lampshade'
+}`)
+	client.HSet("h1", "kcp", `{
+	pluggabletransport: ''
+  kcpsettings: {"blah": 1}
+}`)
 
-	assert.True(t, Lua(script, []goexpr.Expr{goexpr.Constant("h1")}, goexpr.Constant("ka"), goexpr.Constant("amas")).Eval(nil).(int64) > 0, "amas should be found")
-	assert.Nil(t, Lua(script, []goexpr.Expr{goexpr.Constant("h1")}, goexpr.Constant("ka"), goexpr.Constant(`"lamas":`)).Eval(nil), "lamas should not be found")
+	assert.Equal(t, "https", Lua(script, []goexpr.Expr{goexpr.Constant("h1")}, goexpr.Constant("https")).Eval(nil).(string), "should find https")
+	assert.Equal(t, "lampshade", Lua(script, []goexpr.Expr{goexpr.Constant("h1")}, goexpr.Constant("lampshade")).Eval(nil).(string), "should find lampshade")
+	assert.Equal(t, "kcp", Lua(script, []goexpr.Expr{goexpr.Constant("h1")}, goexpr.Constant("kcp")).Eval(nil).(string), "should find kcp")
+	assert.Equal(t, "unknown", Lua(script, []goexpr.Expr{goexpr.Constant("h1")}, goexpr.Constant("blahblah")).Eval(nil).(string), "should find unknown")
 }
