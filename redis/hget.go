@@ -2,6 +2,7 @@ package redis
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/getlantern/goexpr"
 )
@@ -36,7 +37,9 @@ func (e *hget) Eval(params goexpr.Params) interface{} {
 	if !cacheFound {
 		cache = newCache(key, cacheSize, func() (func(onUpdate func(key interface{}, value interface{})), error) {
 			names, err := redisClient.HGetAll(key).Result()
-			if err != nil {
+			if err == io.EOF {
+				return noopRefresher, nil
+			} else if err != nil {
 				return nil, err
 			}
 			return func(onUpdate func(key interface{}, value interface{})) {
@@ -50,6 +53,7 @@ func (e *hget) Eval(params goexpr.Params) interface{} {
 	cacheMx.Unlock()
 	cached, cachedFound := cache.Get(field)
 	if cachedFound {
+		log.Debugf("Found %v: %v", field, cachedFound)
 		return cached
 	}
 

@@ -2,14 +2,27 @@ package redis
 
 import (
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/hashicorp/golang-lru"
 )
 
 const (
-	cacheInvalidationPeriod = 5 * time.Minute
+	defaultCacheInvalidationPeriod = 5 * time.Minute
 )
+
+var (
+	cacheInvalidationPeriod int64 = int64(defaultCacheInvalidationPeriod)
+)
+
+func SetCacheInvalidationPeriod(period time.Duration) {
+	atomic.StoreInt64(&cacheInvalidationPeriod, int64(period))
+}
+
+func getCacheInvalidationPeriod() time.Duration {
+	return time.Duration(atomic.LoadInt64(&cacheInvalidationPeriod))
+}
 
 type refresher func() (func(func(k interface{}, v interface{})), error)
 
@@ -55,6 +68,9 @@ func (c *cache) keepFresh() {
 			c.mx.Unlock()
 			log.Debugf("Refreshed cache for '%v' with %d entries", c.key, entries)
 		}
-		time.Sleep(cacheInvalidationPeriod)
+		time.Sleep(getCacheInvalidationPeriod())
 	}
+}
+
+func noopRefresher(onUpdate func(key interface{}, value interface{})) {
 }
