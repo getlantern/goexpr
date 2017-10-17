@@ -67,3 +67,29 @@ func TestSIsMember(t *testing.T) {
 	assert.True(t, SIsMember(goexpr.Constant("s1"), goexpr.Constant("ka")).Eval(nil).(bool), "ka should be in new set")
 	assert.True(t, SIsMember(goexpr.Constant("s1"), goexpr.Constant("kb")).Eval(nil).(bool), "kb should be in new set")
 }
+
+func TestLua(t *testing.T) {
+	script := goexpr.Constant(`return redis.call('SISMEMBER', KEYS[1], ARGV[1])`)
+	SetCacheInvalidationPeriod(testCacheInvalidationPeriod)
+	defer SetCacheInvalidationPeriod(defaultCacheInvalidationPeriod)
+
+	redis, err := testredis.Open()
+	if !assert.NoError(t, err) {
+		return
+	}
+	defer redis.Close()
+
+	client := redis.Client()
+	Configure(redis.Client(), 100)
+	client.SAdd("s1", "ka")
+	assert.EqualValues(t, 1, Lua(script, []goexpr.Expr{goexpr.Constant("s1")}, goexpr.Constant("ka")).Eval(nil).(int64), "ka should be in initial set")
+	assert.EqualValues(t, 0, Lua(script, []goexpr.Expr{goexpr.Constant("s1")}, goexpr.Constant("kb")).Eval(nil).(int64), "kb should not be in initial set")
+
+	client.SAdd("s1", "kb")
+	assert.EqualValues(t, 1, Lua(script, []goexpr.Expr{goexpr.Constant("s1")}, goexpr.Constant("ka")).Eval(nil).(int64), "ka should be in cached set")
+	assert.EqualValues(t, 0, Lua(script, []goexpr.Expr{goexpr.Constant("s1")}, goexpr.Constant("kb")).Eval(nil).(int64), "kb should not be in cached set")
+
+	time.Sleep(testCacheInvalidationPeriod * 2)
+	assert.EqualValues(t, 1, Lua(script, []goexpr.Expr{goexpr.Constant("s1")}, goexpr.Constant("ka")).Eval(nil).(int64), "ka should be in new set")
+	assert.EqualValues(t, 1, Lua(script, []goexpr.Expr{goexpr.Constant("s1")}, goexpr.Constant("kb")).Eval(nil).(int64), "kb should be in new set")
+}

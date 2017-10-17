@@ -72,5 +72,9 @@ func (c *cache) keepFresh() {
 	}
 }
 
-func noopRefresher(onUpdate func(key interface{}, value interface{})) {
+func noopRefresher() (func(func(k interface{}, v interface{})), error) {
+	return noopRefresh, nil
+}
+
+func noopRefresh(onUpdate func(key interface{}, value interface{})) {
 }

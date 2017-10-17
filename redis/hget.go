@@ -20,6 +20,8 @@ func HGet(key goexpr.Expr, field goexpr.Expr) goexpr.Expr {
 }
 
 func (e *hget) Eval(params goexpr.Params) interface{} {
+	redisClient := getRedisClient()
+
 	_key := e.Key.Eval(params)
 	if _key == nil {
 		return nil
@@ -38,7 +40,7 @@ func (e *hget) Eval(params goexpr.Params) interface{} {
 		cache = newCache(key, cacheSize, func() (func(onUpdate func(key interface{}, value interface{})), error) {
 			names, err := redisClient.HGetAll(key).Result()
 			if err == io.EOF {
-				return noopRefresher, nil
+				return noopRefresh, nil
 			} else if err != nil {
 				return nil, err
 			}
@@ -53,7 +55,6 @@ func (e *hget) Eval(params goexpr.Params) interface{} {
 	cacheMx.Unlock()
 	cached, cachedFound := cache.Get(field)
 	if cachedFound {
-		log.Debugf("Found %v: %v", field, cachedFound)
 		return cached
 	}
 

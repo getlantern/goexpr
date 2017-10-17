@@ -20,6 +20,8 @@ func SIsMember(key goexpr.Expr, member goexpr.Expr) goexpr.Expr {
 }
 
 func (e *sismember) Eval(params goexpr.Params) interface{} {
+	redisClient := getRedisClient()
+
 	_key := e.Key.Eval(params)
 	if _key == nil {
 		return nil
@@ -38,7 +40,7 @@ func (e *sismember) Eval(params goexpr.Params) interface{} {
 		cache = newCache(key, cacheSize, func() (func(onUpdate func(key interface{}, value interface{})), error) {
 			members, err := redisClient.SMembers(key).Result()
 			if err == io.EOF {
-				return noopRefresher, nil
+				return noopRefresh, nil
 			} else if err != nil {
 				return nil, err
 			}
