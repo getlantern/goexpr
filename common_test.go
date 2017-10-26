@@ -3,8 +3,8 @@ package goexpr
 import (
 	"testing"
 
+	"github.com/getlantern/msgpack"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
 func msgpacked(t *testing.T, e Expr) Expr {

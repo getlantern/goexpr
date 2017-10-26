@@ -3,7 +3,7 @@ package goexpr
 import (
 	"fmt"
 
-	"gopkg.in/vmihailenco/msgpack.v2"
+	"github.com/getlantern/msgpack"
 )
 
 // Boolean accepts the operators AND, OR and returns a short-circuiting

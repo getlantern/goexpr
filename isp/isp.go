@@ -7,7 +7,7 @@ import (
 
 	"github.com/getlantern/goexpr"
 	"github.com/getlantern/golog"
-	"gopkg.in/vmihailenco/msgpack.v2"
+	"github.com/getlantern/msgpack"
 )
 
 const (

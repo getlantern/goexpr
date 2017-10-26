@@ -13,9 +13,9 @@ import (
 
 	"github.com/getlantern/goexpr"
 	"github.com/getlantern/golog"
+	"github.com/getlantern/msgpack"
 	"github.com/hashicorp/golang-lru"
 	geoip2 "github.com/oschwald/geoip2-golang"
-	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
 const (

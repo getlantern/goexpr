@@ -5,8 +5,8 @@ import (
 	"sync/atomic"
 
 	"github.com/getlantern/golog"
+	"github.com/getlantern/msgpack"
 	"gopkg.in/redis.v5"
-	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
 var (
