@@ -25,6 +25,7 @@ func init() {
 	msgpack.RegisterExt(81, &substr{})
 	msgpack.RegisterExt(82, &booleanExpr{})
 	msgpack.RegisterExt(83, &oneToOne{})
+	msgpack.RegisterExt(84, &replaceAll{})
 }
 
 type Params interface {
