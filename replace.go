@@ -52,7 +52,7 @@ func (e *replaceAll) WalkLists(cb func(List)) {
 }
 
 func (e *replaceAll) String() string {
-	return fmt.Sprintf("REPLACE(%v, %v, %v)", e.Source.String(), e.Regex, e.Replacement.String())
+	return fmt.Sprintf("REPLACEALL(%v, %v, %v)", e.Source.String(), e.Regex, e.Replacement.String())
 }
 
 func (e *replaceAll) DecodeMsgpack(dec *msgpack.Decoder) error {
