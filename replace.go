@@ -8,13 +8,25 @@ import (
 )
 
 // ReplaceAll replaces all occurrences of the regex with the replacement.
-func ReplaceAll(source Expr, regex string, replacement Expr) Expr {
-	e := &replaceAll{Source: source, Regex: regex, Replacement: replacement}
+func ReplaceAll(source Expr, regex Expr, replacement Expr) Expr {
+	regexString := ""
+	_regex, ok := regex.(*constant)
+	if ok {
+		regexString = fmt.Sprint(_regex.Eval(nil))
+	} else {
+		fmt.Println("Regex is not a constant!")
+		regexString = ""
+	}
+	e := &replaceAll{Source: source, Regex: regexString, Replacement: replacement}
 	e.initReplacer()
 	return e
 }
 
 func (e *replaceAll) initReplacer() {
+	if e.Regex == "" {
+		e.replacer = func(in string, replacement string) string { return in }
+		return
+	}
 	re, err := regexp.Compile(e.Regex)
 	if err != nil {
 		fmt.Printf("Error compiling regex, using noop %v: %v\n", e.Regex, err)
@@ -61,7 +73,7 @@ func (e *replaceAll) DecodeMsgpack(dec *msgpack.Decoder) error {
 	if err != nil {
 		return err
 	}
-	e2 := ReplaceAll(m["Source"].(Expr), m["Regex"].(string), m["Replacement"].(Expr)).(*replaceAll)
+	e2 := ReplaceAll(m["Source"].(Expr), Constant(m["Regex"].(string)), m["Replacement"].(Expr)).(*replaceAll)
 	e.Source = e2.Source
 	e.Regex = e2.Regex
 	e.Replacement = e2.Replacement
