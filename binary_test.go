@@ -15,7 +15,7 @@ func (s scenario) String() string {
 }
 
 func TestBinaryComparisons(t *testing.T) {
-	now := time.Now()
+	now := time.Now().Truncate(1 * time.Millisecond)
 	scenarios := []scenario{
 		scenario{"==", nil, nil, true},
 		scenario{"==", nil, false, false},
@@ -178,17 +178,6 @@ func TestBinaryComparisons(t *testing.T) {
 		}
 	}
 	scenarios = append(scenarios, equivalentScenarios...)
-
-	// Add the inverse of the scenarios
-	var inverseScenarios []scenario
-	for _, s := range scenarios {
-		if s[0] == "==" || s[0] == "!=" || s[0] == "=" || s[0] == "<>" {
-			inverseScenarios = append(inverseScenarios, scenario{s[0], s[2], s[1], s[3]})
-		} else if s[0] == "<" {
-			inverseScenarios = append(inverseScenarios, scenario{">", s[2], s[1], s[3]})
-		}
-	}
-	scenarios = append(scenarios, inverseScenarios...)
 
 	for _, scenario := range scenarios {
 		params := MapParams{"a": scenario[1]}
