@@ -6,7 +6,7 @@ import (
 
 	"github.com/getlantern/golog"
 	"github.com/getlantern/msgpack"
-	"github.com/go-redis/redis"
+	"gopkg.in/redis.v5"
 )
 
 var (
