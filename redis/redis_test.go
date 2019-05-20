@@ -61,7 +61,7 @@ func TestSIsMember(t *testing.T) {
 
 	client.SAdd("s1", "kb")
 	assert.True(t, SIsMember(goexpr.Constant("s1"), goexpr.Constant("ka")).Eval(nil).(bool), "ka should be in cached set")
-	assert.False(t, SIsMember(goexpr.Constant("s1"), goexpr.Constant("kb")).Eval(nil).(bool), "kb should be in cached set")
+	assert.False(t, SIsMember(goexpr.Constant("s1"), goexpr.Constant("kb")).Eval(nil).(bool), "kb should not be in cached set")
 
 	time.Sleep(testCacheInvalidationPeriod * 2)
 	assert.True(t, SIsMember(goexpr.Constant("s1"), goexpr.Constant("ka")).Eval(nil).(bool), "ka should be in new set")
