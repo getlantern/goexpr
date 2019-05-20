@@ -65,13 +65,7 @@ func (e *lua) Eval(params goexpr.Params) interface{} {
 
 	// Check cache
 	cacheKey := fmt.Sprintf("|||||||||script*********%v", script)
-	cacheMx.Lock()
-	cache, cacheFound := caches[cacheKey]
-	if !cacheFound {
-		cache = newCache(cacheKey, cacheSize, noopRefresher)
-		caches[cacheKey] = cache
-	}
-	cacheMx.Unlock()
+	cache := cacheFor(cacheKey, cacheSize)
 	cached, cachedFound := cache.Get(valueKey)
 	if cachedFound {
 		return cached
