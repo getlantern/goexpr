@@ -4,10 +4,15 @@ import (
 	"bytes"
 )
 
-// Decode compares the value of source to a series of key/value pairs and
-// returns the matching value. It optionally takes a final default value to use
+// Decode compares the value of the first expression to a series of key/value pairs
+// and returns the matching value. It optionally takes a final default value to use
 // if none of the keys match.
-func Decode(source Expr, kvs ...Expr) Expr {
+func Decode(exprs ...Expr) Expr {
+	if len(exprs) < 2 {
+		return &noop{}
+	}
+	source := exprs[0]
+	kvs := exprs[1:]
 	d := &decode{Source: source}
 	for i := 0; i < len(kvs); i += 2 {
 		k := kvs[i]
