@@ -7,9 +7,13 @@ import (
 )
 
 func TestDecode(t *testing.T) {
-	e := Decode(Constant(1))
+	e := Decode()
 	assert.Nil(t, e.Eval(nil))
-	assert.Equal(t, "DECODE(1)", e.String())
+	assert.Equal(t, "NOOP", e.String())
+
+	e = Decode(Constant(1))
+	assert.Nil(t, e.Eval(nil))
+	assert.Equal(t, "NOOP", e.String())
 
 	e = Decode(Constant(1), Constant(5))
 	assert.Equal(t, 5, e.Eval(nil))
