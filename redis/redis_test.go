@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -25,14 +26,15 @@ func TestHGet(t *testing.T) {
 
 	client := redis.Client()
 	Configure(redis.Client(), 100)
-	client.HSet("h1", "ka", 1)
-	client.HSet("h1", "kb", 2)
+	ctx := context.Background()
+	client.HSet(ctx, "h1", "ka", 1)
+	client.HSet(ctx, "h1", "kb", 2)
 	assert.Equal(t, "1", HGet(goexpr.Constant("h1"), goexpr.Constant("ka")).Eval(nil), "Should get initial ka")
 	assert.Equal(t, "2", HGet(goexpr.Constant("h1"), goexpr.Constant("kb")).Eval(nil), "Should get initial kb")
 
-	client.HSet("h1", "ka", 11)
-	client.HSet("h1", "kb", 12)
-	client.HSet("h1", "kc", 13)
+	client.HSet(ctx, "h1", "ka", 11)
+	client.HSet(ctx, "h1", "kb", 12)
+	client.HSet(ctx, "h1", "kc", 13)
 	assert.Equal(t, "1", HGet(goexpr.Constant("h1"), goexpr.Constant("ka")).Eval(nil), "Should get cached ka")
 	assert.Equal(t, "2", HGet(goexpr.Constant("h1"), goexpr.Constant("kb")).Eval(nil), "Should get cached kb")
 	assert.Equal(t, "13", HGet(goexpr.Constant("h1"), goexpr.Constant("kc")).Eval(nil), "Should get newly added kc")
@@ -55,11 +57,12 @@ func TestSIsMember(t *testing.T) {
 
 	client := redis.Client()
 	Configure(redis.Client(), 100)
-	client.SAdd("s1", "ka")
+	ctx := context.Background()
+	client.SAdd(ctx, "s1", "ka")
 	assert.True(t, SIsMember(goexpr.Constant("s1"), goexpr.Constant("ka")).Eval(nil).(bool), "ka should be in initial set")
 	assert.False(t, SIsMember(goexpr.Constant("s1"), goexpr.Constant("kb")).Eval(nil).(bool), "kb should not be in initial set")
 
-	client.SAdd("s1", "kb")
+	client.SAdd(ctx, "s1", "kb")
 	assert.True(t, SIsMember(goexpr.Constant("s1"), goexpr.Constant("ka")).Eval(nil).(bool), "ka should be in cached set")
 	assert.False(t, SIsMember(goexpr.Constant("s1"), goexpr.Constant("kb")).Eval(nil).(bool), "kb should not be in cached set")
 
@@ -81,11 +84,12 @@ func TestLua(t *testing.T) {
 
 	client := redis.Client()
 	Configure(redis.Client(), 100)
-	client.SAdd("s1", "ka")
+	ctx := context.Background()
+	client.SAdd(ctx, "s1", "ka")
 	assert.EqualValues(t, 1, Lua(script, []goexpr.Expr{goexpr.Constant("s1")}, goexpr.Constant("ka")).Eval(nil).(int64), "ka should be in initial set")
 	assert.EqualValues(t, 0, Lua(script, []goexpr.Expr{goexpr.Constant("s1")}, goexpr.Constant("kb")).Eval(nil).(int64), "kb should not be in initial set")
 
-	client.SAdd("s1", "kb")
+	client.SAdd(ctx, "s1", "kb")
 	assert.EqualValues(t, 1, Lua(script, []goexpr.Expr{goexpr.Constant("s1")}, goexpr.Constant("ka")).Eval(nil).(int64), "ka should be in cached set")
 	assert.EqualValues(t, 0, Lua(script, []goexpr.Expr{goexpr.Constant("s1")}, goexpr.Constant("kb")).Eval(nil).(int64), "kb should not be in cached set")
 
@@ -123,13 +127,14 @@ func TestLuaComplex(t *testing.T) {
 
 	client := redis.Client()
 	Configure(redis.Client(), 100)
-	client.HSet("h1", "https", `{
+	ctx := context.Background()
+	client.HSet(ctx, "h1", "https", `{
 	pluggabletransport: ''
 }`)
-	client.HSet("h1", "lampshade", `{
+	client.HSet(ctx, "h1", "lampshade", `{
 	pluggabletransport: 'lampshade'
 }`)
-	client.HSet("h1", "kcp", `{
+	client.HSet(ctx, "h1", "kcp", `{
 	pluggabletransport: ''
   kcpsettings: {"blah": 1}
 }`)

@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/getlantern/goexpr"
@@ -39,7 +40,7 @@ func (e *hget) Eval(params goexpr.Params) interface{} {
 		return cached
 	}
 
-	value, _ := redisClient.HGet(key, field).Result()
+	value, _ := redisClient.HGet(context.Background(), key, field).Result()
 	cache.Add(field, value)
 	return value
 }

@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/getlantern/goexpr"
@@ -39,7 +40,7 @@ func (e *sismember) Eval(params goexpr.Params) interface{} {
 		return cached
 	}
 
-	value, _ := redisClient.SIsMember(key, member).Result()
+	value, _ := redisClient.SIsMember(context.Background(), key, member).Result()
 	cache.Add(member, value)
 	return value
 }
