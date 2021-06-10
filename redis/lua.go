@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -54,7 +55,7 @@ func (e *lua) Eval(params goexpr.Params) interface{} {
 	sha := scriptCache[script]
 	if sha == "" {
 		var loadErr error
-		sha, loadErr = redisClient.ScriptLoad(script).Result()
+		sha, loadErr = redisClient.ScriptLoad(context.Background(), script).Result()
 		if loadErr != nil {
 			log.Errorf("Unable to load lua script '%v': %v", script, loadErr)
 			return nil
@@ -71,7 +72,7 @@ func (e *lua) Eval(params goexpr.Params) interface{} {
 		return cached
 	}
 
-	value, err := redisClient.EvalSha(sha, keys, args...).Result()
+	value, err := redisClient.EvalSha(context.Background(), sha, keys, args...).Result()
 	if err != nil {
 		log.Errorf("Error evaluating script '%v': %v", script, err)
 		return nil
