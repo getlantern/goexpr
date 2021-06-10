@@ -9,7 +9,7 @@ require (
 	github.com/getlantern/hidden v0.0.0-20201229170000-e66e7f878730 // indirect
 	github.com/getlantern/msgpack v3.1.4+incompatible
 	github.com/getlantern/ops v0.0.0-20200403153110-8476b16edcd6 // indirect
-	github.com/getlantern/testredis v0.0.0-20210609073356-020f37bda59a
+	github.com/getlantern/testredis v0.0.0-20210610142259-c0995d455766
 	github.com/go-redis/redis/v8 v8.10.0
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/hashicorp/golang-lru v0.5.4
@@ -21,7 +21,7 @@ require (
 	github.com/syndtr/goleveldb v1.0.0 // indirect
 	github.com/ugorji/go v1.2.6 // indirect
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9 // indirect
-	golang.org/x/net v0.0.0-20210525063256-abc453219eb5 // indirect
+	golang.org/x/net v0.0.0-20210610132358-84b48f89b13b // indirect
 	golang.org/x/sys v0.0.0-20210608053332-aa57babbf139 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	gopkg.in/vmihailenco/msgpack.v2 v2.9.1 // indirect
