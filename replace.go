@@ -45,6 +45,9 @@ type replaceAll struct {
 
 func (e *replaceAll) Eval(params Params) interface{} {
 	source := e.Source.Eval(params)
+	if source == nil {
+		return nil
+	}
 	replacement := e.Replacement.Eval(params)
 	return e.replacer(fmt.Sprint(source), fmt.Sprint(replacement))
 }
