@@ -49,7 +49,11 @@ func (e *replaceAll) Eval(params Params) interface{} {
 		return nil
 	}
 	replacement := e.Replacement.Eval(params)
-	return e.replacer(fmt.Sprint(source), fmt.Sprint(replacement))
+	replacementString := ""
+	if replacement != nil {
+		replacementString = fmt.Sprint(replacement)
+	}
+	return e.replacer(fmt.Sprint(source), replacementString)
 }
 
 func (e *replaceAll) WalkParams(cb func(string)) {
