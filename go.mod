@@ -21,8 +21,7 @@ require (
 	github.com/syndtr/goleveldb v1.0.0 // indirect
 	github.com/ugorji/go v1.2.6 // indirect
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9 // indirect
-	golang.org/x/net v0.0.0-20210610132358-84b48f89b13b // indirect
-	golang.org/x/sys v0.0.0-20210608053332-aa57babbf139 // indirect
+	golang.org/x/net v0.7.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	gopkg.in/vmihailenco/msgpack.v2 v2.9.1 // indirect
 )
